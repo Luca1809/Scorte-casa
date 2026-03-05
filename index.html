@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Scorte Casa</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<style>
+body { font-family: Arial; padding:20px; background:#f4f4f4;}
+input, button { padding:8px; margin:5px 0;}
+.item { background:white; padding:10px; margin:8px 0; border-radius:8px;}
+.low { background:#ffe0e0;}
+</style>
+</head>
+<body>
+
+<h2>Scorte Casa</h2>
+
+<input id="nome" placeholder="Nome">
+<input id="categoria" placeholder="Categoria">
+<input id="quantita" type="number" placeholder="Quantità">
+<input id="minimo" type="number" placeholder="Minimo">
+<button onclick="aggiungi()">Aggiungi</button>
+
+<div id="lista"></div>
+
+<script>
+
+const supabaseUrl = "https://igachimyxuixxltcjsnw.supabase.co/";
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnYWNoaW15eHVpeHhsdGNqc253Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNDc2MzgsImV4cCI6MjA4NzYyMzYzOH0.ZCxBWrLZNISSnOu-oxFv3zrW2aZsiNljUfQR831arko";
+
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+async function carica() {
+  const { data } = await supabase.from("scorte").select("*");
+  mostra(data || []);
+}
+
+async function aggiungi() {
+  const nome = document.getElementById("nome").value;
+  const categoria = document.getElementById("categoria").value;
+  const quantita = parseInt(document.getElementById("quantita").value);
+  const minimo = parseInt(document.getElementById("minimo").value);
+
+  await supabase.from("scorte").insert([{ nome, categoria, quantita, minimo }]);
+  carica();
+}
+
+async function aggiorna(id, nuovaQ) {
+  if (nuovaQ < 0) nuovaQ = 0;
+  await supabase.from("scorte").update({ quantita: nuovaQ }).eq("id", id);
+  carica();
+}
+
+function mostra(lista) {
+  const div = document.getElementById("lista");
+  div.innerHTML="";
+
+  lista.forEach(item=>{
+    const low = item.quantita <= item.minimo ? "low" : "";
+
+    div.innerHTML += `
+      <div class="item ${low}">
+        <strong>${item.nome}</strong> (${item.categoria})<br>
+        Quantità: ${item.quantita} | Min: ${item.minimo}<br>
+        <button onclick="aggiorna(${item.id}, ${item.quantita-1})">-</button>
+        <button onclick="aggiorna(${item.id}, ${item.quantita+1})">+</button>
+      </div>
+    `;
+  });
+}
+
+carica();
+
+</script>
+
+</body>
+</html>
