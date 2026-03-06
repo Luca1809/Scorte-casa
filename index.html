@@ -1530,7 +1530,7 @@ function mostraStats(){
   const topMese=Object.entries(contatoreMonth).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const divMese=document.getElementById("stats-mese");
   if(!topMese.length){
-    divMese.innerHTML='<div class="stat-empty">Nessuna ricarica nell'ultimo mese.</div>';
+    divMese.innerHTML="<div class='stat-empty'>Nessuna ricarica nell'ultimo mese.</div>";
   } else {
     divMese.innerHTML=topMese.map(([nome,n],i)=>
       '<div class="stat-card">'
