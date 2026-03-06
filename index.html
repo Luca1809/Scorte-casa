@@ -232,12 +232,12 @@ header h1 em{font-style:italic;font-weight:300}
 .settings-row-right{flex-shrink:0}
 
 /* Toggle switch */
-.toggle{position:relative;width:44px;height:26px;cursor:pointer}
-.toggle input{opacity:0;width:0;height:0}
-.toggle-track{position:absolute;inset:0;background:var(--border);border-radius:13px;transition:background .2s}
+.toggle{position:relative;width:44px;height:26px;cursor:pointer;display:inline-block}
+.toggle input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;z-index:2;margin:0}
+.toggle-track{position:absolute;inset:0;background:var(--border);border-radius:13px;transition:background .2s;pointer-events:none}
 .toggle input:checked+.toggle-track{background:var(--accent)}
 .toggle-thumb{position:absolute;top:3px;left:3px;width:20px;height:20px;background:white;border-radius:50%;
-  transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+  transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2);pointer-events:none;z-index:1}
 .toggle input:checked~.toggle-thumb{transform:translateX(18px)}
 
 /* Segment control */
@@ -299,6 +299,37 @@ header h1 em{font-style:italic;font-weight:300}
 .btn-save{padding:12px;background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);
   font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer;transition:opacity .2s}
 .btn-save:active{opacity:.85}
+/* ── CONFIRM DIALOG ── */
+.confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;
+  align-items:flex-end;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.confirm-overlay.open{display:flex}
+.confirm-box{width:100%;background:var(--surface);border-radius:20px 20px 0 0;
+  padding:24px 20px calc(env(safe-area-inset-bottom,0px) + 28px);
+  box-shadow:var(--shadow-lg);animation:slideUp .25s cubic-bezier(.32,.72,0,1);text-align:center}
+.confirm-msg{font-size:.95rem;font-weight:500;margin-bottom:20px;line-height:1.4}
+.confirm-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.confirm-btn-no{padding:13px;background:var(--bg2);color:var(--text-muted);border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer}
+.confirm-btn-si{padding:13px;background:var(--danger);color:white;border:none;
+  border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer}
+
+/* ── ICS FALLBACK ── */
+.ics-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;
+  align-items:flex-end;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.ics-overlay.open{display:flex}
+.ics-box{width:100%;background:var(--surface);border-radius:20px 20px 0 0;
+  padding:20px 20px calc(env(safe-area-inset-bottom,0px) + 24px);box-shadow:var(--shadow-lg);
+  animation:slideUp .25s cubic-bezier(.32,.72,0,1)}
+.ics-box h3{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:600;margin-bottom:6px}
+.ics-box p{font-size:.8rem;color:var(--text-muted);margin-bottom:12px}
+.ics-box textarea{width:100%;height:140px;padding:10px 12px;border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);font-family:'DM Mono',monospace;font-size:.8rem;background:var(--bg);
+  color:var(--text);outline:none;resize:none;line-height:1.5}
+.ics-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.ics-btn-chiudi{padding:12px;background:var(--bg2);color:var(--text-muted);border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer}
+.ics-btn-copia{padding:12px;background:var(--accent);color:white;border:none;
+  border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer}
 </style>
 </head>
 <body>
@@ -744,11 +775,37 @@ async function aggiorna(id,nuovaQ){
 }
 
 /* ═══════════ ELIMINA ═══════════ */
-async function elimina(id,nome){
-  if(!confirm(`Eliminare "${nome}"?`))return;
+async function eliminaConfermato(id){
   const{error}=await client.from("scorte").delete().eq("id",id);
   if(error){console.error(error);return;}
   carica();
+}
+
+function elimina(id,nome){
+  mostraConfirm(`Eliminare "${nome}"?`, ()=>eliminaConfermato(id), null);
+}
+
+/* ═══════════ CUSTOM CONFIRM ═══════════ */
+function mostraConfirm(msg,onSi,onNo){
+  const ov=document.getElementById("confirm-overlay");
+  document.getElementById("confirm-msg").textContent=msg;
+  ov.classList.add("open");
+  ov._onSi=onSi; ov._onNo=onNo;
+}
+function confirmSi(){
+  const ov=document.getElementById("confirm-overlay");
+  ov.classList.remove("open");
+  if(ov._onSi) ov._onSi();
+}
+function confirmNo(){
+  const ov=document.getElementById("confirm-overlay");
+  ov.classList.remove("open");
+  document.querySelectorAll(".item").forEach(el=>{
+    el.style.transition="transform .2s ease";
+    el.style.transform="translateX(0)";
+    el.style.opacity="1";
+  });
+  if(ov._onNo) ov._onNo();
 }
 
 /* ═══════════ SWIPE TO DELETE ═══════════ */
@@ -762,9 +819,17 @@ function setupSwipe(el,id,nome){
     if(currentX<0) el.style.transform=`translateX(${Math.max(currentX,-120)}px)`;
   },{passive:true});
   el.addEventListener("touchend",()=>{
-    swiping=false;el.style.transition="transform .2s ease";
-    if(currentX<-TH){el.style.transform="translateX(-100%)";el.style.opacity="0";setTimeout(()=>elimina(id,nome),200);}
-    else el.style.transform="translateX(0)";
+    swiping=false; el.style.transition="transform .2s ease";
+    if(currentX<-TH){
+      el.style.transform="translateX(-100%)"; el.style.opacity="0";
+      setTimeout(()=>mostraConfirm(
+        `Eliminare "${nome}"?`,
+        ()=>eliminaConfermato(id),
+        ()=>{ el.style.transform="translateX(0)"; el.style.opacity="1"; }
+      ),180);
+    } else {
+      el.style.transform="translateX(0)";
+    }
     currentX=0;
   });
 }
@@ -870,15 +935,19 @@ function esportaPromemoria(){
     "END:VCALENDAR"
   ].join("\r\n");
 
-  // Su Safari iOS i download blob sono bloccati — usiamo data URI che Safari
-  // riconosce come .ics e offre di aprire direttamente nei Promemoria
+  // Safari iOS blocca blob download e data: URI navigation.
+  // Soluzione: aprire in nuova finestra con window.open() + data URI
+  // Su iOS Safari questo triggera il dialogo "Apri in Promemoria"
   const encoded = encodeURIComponent(ics);
+  const dataUri = "data:text/calendar;charset=utf-8," + encoded;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   if (isIOS) {
-    // Naviga al data URI: Safari mostra "Apri in Promemoria"
-    window.location.href = "data:text/calendar;charset=utf-8," + encoded;
+    const w = window.open(dataUri, "_blank");
+    if (!w) {
+      // Popup bloccato (PWA home screen) — mostriamo testo da copiare
+      mostraIcsTestuale(ics);
+    }
   } else {
-    // Su desktop/Android usa il download normale
     const blob = new Blob([ics], {type:"text/calendar;charset=utf-8"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -886,6 +955,20 @@ function esportaPromemoria(){
     document.body.appendChild(a); a.click();
     document.body.removeChild(a); URL.revokeObjectURL(url);
   }
+}
+
+/* ═══════════ ICS FALLBACK (testo copiabile) ═══════════ */
+function mostraIcsTestuale(ics){
+  const basse=tutteLeScorti.filter(i=>i.quantita<=i.minimo);
+  const testo=basse.map(i=>`☐ ${i.nome}${i.categoria?' ('+i.categoria+')':''}`).join('\n');
+  const ov=document.getElementById("ics-overlay");
+  document.getElementById("ics-testo").value=testo;
+  ov.classList.add("open");
+}
+function chiudiIcs(){ document.getElementById("ics-overlay").classList.remove("open"); }
+function copiaIcs(){
+  const ta=document.getElementById("ics-testo");
+  ta.select(); navigator.clipboard.writeText(ta.value).then(()=>{ chiudiIcs(); alert("Lista copiata!"); });
 }
 
 /* ═══════════ CATEGORIE MANAGER (Impostazioni) ═══════════ */
@@ -1000,5 +1083,29 @@ function mostra(){
 caricaImpostazioni();
 carica();
 </script>
+<!-- CONFIRM DIALOG -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-btns">
+      <button class="confirm-btn-no" onclick="confirmNo()">Annulla</button>
+      <button class="confirm-btn-si" onclick="confirmSi()">Elimina</button>
+    </div>
+  </div>
+</div>
+
+<!-- ICS FALLBACK -->
+<div class="ics-overlay" id="ics-overlay">
+  <div class="ics-box">
+    <h3>Lista della Spesa</h3>
+    <p>Copia il testo e incollalo nell'app Promemoria</p>
+    <textarea id="ics-testo" readonly></textarea>
+    <div class="ics-btns">
+      <button class="ics-btn-chiudi" onclick="chiudiIcs()">Chiudi</button>
+      <button class="ics-btn-copia" onclick="copiaIcs()">📋 Copia</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
