@@ -359,6 +359,36 @@ header h1 em{font-style:italic;font-weight:300}
   font-family:'DM Sans',sans-serif;font-size:.88rem;background:var(--surface);color:var(--text);outline:none}
 
 /* ── TOAST ── */
+/* ── LOADING RING ── */
+.loading-ring{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.3);
+  border-top-color:white;display:none;animation:spin .7s linear infinite;flex-shrink:0}
+.loading-ring.active{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── STORICO HEADER ── */
+.storico-header{display:flex;align-items:center;padding:14px 16px 0;gap:0}
+.storico-title{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:600;white-space:nowrap}
+
+/* ── GRAFICO ── */
+.grafico-empty{text-align:center;padding:40px 0;color:var(--text-muted);font-size:.85rem}
+.grafico-bars{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.grafico-row{display:flex;align-items:center;gap:10px}
+.grafico-label{font-size:.75rem;font-weight:500;width:60px;text-align:right;flex-shrink:0;color:var(--text-muted)}
+.grafico-bar-wrap{flex:1;height:24px;background:var(--bg2);border-radius:6px;overflow:hidden;position:relative}
+.grafico-bar-fill{height:100%;background:var(--accent);border-radius:6px;transition:width .5s ease;min-width:2px}
+.grafico-val{font-size:.72rem;font-family:'DM Mono',monospace;width:30px;flex-shrink:0;color:var(--text-muted)}
+
+/* ── STATISTICHE ── */
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow);margin:0 16px 6px}
+.stat-rank{font-size:1.1rem;font-weight:700;font-family:'DM Mono',monospace;color:var(--text-muted);
+  width:28px;text-align:center;flex-shrink:0}
+.stat-info{flex:1;min-width:0}
+.stat-nome{font-size:.9rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stat-desc{font-size:.73rem;color:var(--text-muted);margin-top:2px}
+.stat-count{font-size:1rem;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent);flex-shrink:0}
+.stat-empty{text-align:center;padding:30px;color:var(--text-muted);font-size:.85rem;margin:0 16px}
+
 .toast{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px)+84px);left:50%;transform:translateX(-50%) translateY(12px);
   padding:10px 18px;border-radius:20px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;
   color:white;z-index:600;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap}
@@ -417,7 +447,10 @@ header h1 em{font-style:italic;font-weight:300}
 <header>
   <div class="header-row1">
     <h1>Scorte <em>Casa</em></h1>
-    <div class="header-stats" id="header-stats">—</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="loading-ring" id="loading-ring"></div>
+      <div class="header-stats" id="header-stats">—</div>
+    </div>
   </div>
   <div class="search-wrap" id="search-wrap" style="display:none">
     <span class="search-icon">🔍</span>
@@ -477,10 +510,13 @@ header h1 em{font-style:italic;font-weight:300}
           <div class="autocomplete-list" id="cat-autocomplete"></div>
         </div>
         <div class="form-row">
-          <input id="quantita" type="number" placeholder="Quantità" min="0" inputmode="numeric">
-          <input id="minimo" type="number" placeholder="Minimo" min="0" inputmode="numeric">
+          <input id="quantita" type="number" placeholder="Quantità attuale" min="0" inputmode="numeric">
+          <input id="minimo" type="number" placeholder="Soglia minima" min="0" inputmode="numeric">
         </div>
-        <input id="note" placeholder="Note (es. marca, dove comprare…)" autocomplete="off">
+        <div class="form-row">
+          <input id="rifornimento" type="number" placeholder="Qt. da comprare" min="1" inputmode="numeric" title="Quante unità compri di solito">
+          <input id="note" placeholder="Note" autocomplete="off">
+        </div>
         <button class="btn-add" onclick="aggiungi()">+ Aggiungi alla lista</button>
       </div>
     </div>
@@ -508,12 +544,44 @@ header h1 em{font-style:italic;font-weight:300}
 <!-- ══ STORICO ══ -->
 <div class="view" id="view-storico">
   <div class="storico-page">
-    <div class="storico-title">Storico <em>movimenti</em></div>
-    <div class="section-title" style="margin-top:0">
-      <span id="storico-subtitle">Ultimi movimenti</span>
-      <button class="sort-btn" onclick="svuotaStorico()" style="font-size:.7rem;padding:4px 10px;color:var(--danger);border-color:var(--danger)">Cancella</button>
+    <div class="storico-header">
+      <div class="storico-title">Storico</div>
+      <div class="segment" id="storico-segment" style="min-width:0;flex:1;margin-left:12px">
+        <button class="seg-btn active" onclick="setStoricoTab('movimenti')">Movimenti</button>
+        <button class="seg-btn" onclick="setStoricoTab('stats')">Statistiche</button>
+        <button class="seg-btn" onclick="setStoricoTab('grafici')">Grafici</button>
+      </div>
     </div>
-    <div id="storico-lista"></div>
+
+    <!-- MOVIMENTI -->
+    <div id="storico-tab-movimenti">
+      <div class="section-title" style="margin-top:10px">
+        <span id="storico-subtitle">Ultimi movimenti</span>
+        <button class="sort-btn" onclick="svuotaStorico()" style="font-size:.7rem;padding:4px 10px;color:var(--danger);border-color:var(--danger)">Cancella</button>
+      </div>
+      <div id="storico-lista"></div>
+    </div>
+
+    <!-- STATISTICHE -->
+    <div id="storico-tab-stats" style="display:none">
+      <div class="section-title" style="margin-top:10px"><span>Top prodotti</span></div>
+      <div id="stats-lista"></div>
+      <div class="section-title" style="margin-top:16px"><span>Questo mese</span></div>
+      <div id="stats-mese"></div>
+    </div>
+
+    <!-- GRAFICI -->
+    <div id="storico-tab-grafici" style="display:none">
+      <div class="section-title" style="margin-top:10px">
+        <span>Ricariche per prodotto</span>
+        <select id="grafico-select" onchange="aggiornaGrafico()" style="font-size:.75rem;padding:4px 8px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif">
+          <option value="">Seleziona...</option>
+        </select>
+      </div>
+      <div id="grafico-wrap" style="margin:0 16px">
+        <div class="grafico-empty">Seleziona un prodotto per vedere il grafico dei ricarichi</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -656,9 +724,15 @@ header h1 em{font-style:italic;font-weight:300}
           <input id="edit-minimo" type="number" placeholder="0" min="0" inputmode="numeric">
         </div>
       </div>
-      <div class="field-wrap">
-        <label class="field-label">Note</label>
-        <input id="edit-note" placeholder="es. marca, dove comprare…" autocomplete="off">
+      <div class="modal-row">
+        <div class="field-wrap">
+          <label class="field-label">Qt. da comprare</label>
+          <input id="edit-rifornimento" type="number" placeholder="es. 6" min="1" inputmode="numeric">
+        </div>
+        <div class="field-wrap">
+          <label class="field-label">Note</label>
+          <input id="edit-note" placeholder="es. marca…" autocomplete="off">
+        </div>
       </div>
     </div>
     <div class="modal-btns">
@@ -752,7 +826,7 @@ function switchTab(tab){
   document.getElementById("tab-"+tab).classList.add("active");
   document.getElementById("search-wrap").style.display = tab==="inventario" ? "block" : "none";
   if(tab==="spesa") mostraSpesa();
-  if(tab==="storico") mostraStorico();
+  if(tab==="storico"){ setStoricoTab(storicoTab||"movimenti"); }
   if(tab==="impostazioni") aggiornaInfoApp();
   if(tab==="inventario"){
     document.getElementById("search-input").value="";
@@ -763,11 +837,13 @@ function switchTab(tab){
 
 /* ═══════════ CARICA DB ═══════════ */
 async function carica(){
+  setLoading(true);
   // Carica categorie dal DB (sincronizzate tra tutti i dispositivi)
   const{data:catData}=await client.from("categorie").select("nome").order("nome");
   if(catData) categoriePersonalizzate=catData.map(r=>r.nome);
   const{data,error}=await client.from("scorte").select("*");
-  if(error){console.error(error);return;}
+  setLoading(false);
+  if(error){console.error(error);mostraToast("Errore caricamento dati","warn");return;}
   tutteLeScorti=data||[];
   aggiornaCatGrid();
   mostra();
@@ -903,11 +979,13 @@ async function aggiungi(){
   const quantita=parseInt(document.getElementById("quantita").value);
   const minimo=parseInt(document.getElementById("minimo").value);
   const note=document.getElementById("note").value.trim();
-  if(!nome||isNaN(quantita)||isNaN(minimo)){alert("Compila tutti i campi.");return;}
-  const{error}=await client.from("scorte").insert([{nome,categoria,quantita,minimo,note}]);
-  if(error){alert("Errore: "+error.message);return;}
+  const rifornimento=parseInt(document.getElementById("rifornimento").value)||null;
+  if(!nome||isNaN(quantita)||isNaN(minimo)){mostraToast("Compila tutti i campi","warn");return;}
+  const{error}=await client.from("scorte").insert([{nome,categoria,quantita,minimo,note,rifornimento}]);
+  if(error){mostraToast("Errore: "+error.message,"warn");return;}
   aggiungiStorico("➕","Aggiunta scorta",`${nome} · quantità iniziale: ${quantita}`);
-  ["nome","categoria","quantita","minimo","note"].forEach(id=>document.getElementById(id).value="");
+  ["nome","categoria","quantita","minimo","note","rifornimento"].forEach(id=>document.getElementById(id).value="");
+  mostraToast(`✅ ${nome} aggiunto`);
   await carica();
   switchTab("inventario");
 }
@@ -1001,6 +1079,7 @@ function apriModal(id){
   document.getElementById("edit-quantita").value=item.quantita;
   document.getElementById("edit-minimo").value=item.minimo;
   document.getElementById("edit-note").value=item.note||"";
+  document.getElementById("edit-rifornimento").value=item.rifornimento||"";
   document.getElementById("modal-overlay").classList.add("open");
 }
 function chiudiModal(){document.getElementById("modal-overlay").classList.remove("open");editingId=null;}
@@ -1012,9 +1091,10 @@ async function salvaModifica(){
   const quantita=parseInt(document.getElementById("edit-quantita").value);
   const minimo=parseInt(document.getElementById("edit-minimo").value);
   const note=document.getElementById("edit-note").value.trim();
-  if(!nome||isNaN(quantita)||isNaN(minimo)){alert("Compila tutti i campi.");return;}
-  const{error}=await client.from("scorte").update({nome,categoria,quantita,minimo,note}).eq("id",editingId);
-  if(error){alert("Errore: "+error.message);return;}
+  const rifornimento=parseInt(document.getElementById("edit-rifornimento").value)||null;
+  if(!nome||isNaN(quantita)||isNaN(minimo)){mostraToast("Compila tutti i campi","warn");return;}
+  const{error}=await client.from("scorte").update({nome,categoria,quantita,minimo,note,rifornimento}).eq("id",editingId);
+  if(error){mostraToast("Errore: "+error.message,"warn");return;}
   // Log dettagliato: confronta con valori precedenti
   const vecchioItem=tutteLeScorti.find(i=>i.id===editingId);
   if(vecchioItem){
@@ -1088,10 +1168,11 @@ function mostraSpesa(){
   }
 }
 function cambiaAcquistoQty(id,delta){
+  const item=tutteLeScorti.find(i=>i.id===id);
+  const step=delta>0&&item?.rifornimento?item.rifornimento:1;
   const cur=acquistoQty[id]??0;
-  const nv=Math.max(0,cur+delta);
+  const nv=Math.max(0,cur+(delta>0?step:-step));
   acquistoQty[id]=nv;
-  // re-render solo quella riga per non perdere stato
   mostraSpesa();
 }
 function toggleSpesa(id){
@@ -1397,6 +1478,110 @@ function mostraToast(msg,tipo="ok"){
   t.classList.add("visible");
   clearTimeout(t._to);
   t._to=setTimeout(()=>t.classList.remove("visible"),2800);
+}
+
+/* ═══════════ LOADING ═══════════ */
+function setLoading(on){
+  const r=document.getElementById("loading-ring");
+  if(r) r.classList.toggle("active",on);
+}
+
+/* ═══════════ STORICO SUB-TABS ═══════════ */
+let storicoTab="movimenti";
+function setStoricoTab(tab){
+  storicoTab=tab;
+  ["movimenti","stats","grafici"].forEach(t=>{
+    document.getElementById("storico-tab-"+t).style.display=t===tab?"block":"none";
+  });
+  document.querySelectorAll("#storico-segment .seg-btn").forEach((b,i)=>{
+    b.classList.toggle("active",["movimenti","stats","grafici"][i]===tab);
+  });
+  if(tab==="stats") mostraStats();
+  if(tab==="grafici") aggiornaGraficoSelect();
+}
+
+/* ═══════════ STATISTICHE ═══════════ */
+function mostraStats(){
+  const s=getStorico();
+  const ora=Date.now();
+  const unMese=30*24*60*60*1000;
+  const contatoreAll={}, contatoreMonth={};
+  s.forEach(m=>{
+    if(m.icon==="📈"||m.icon==="🛒"){
+      contatoreAll[m.titolo]=(contatoreAll[m.titolo]||0)+1;
+      if(ora-m.ts<unMese) contatoreMonth[m.titolo]=(contatoreMonth[m.titolo]||0)+1;
+    }
+  });
+  const topAll=Object.entries(contatoreAll).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const divAll=document.getElementById("stats-lista");
+  if(!topAll.length){
+    divAll.innerHTML='<div class="stat-empty">Nessun dato ancora. Le statistiche crescono man mano che aggiorni le scorte.</div>';
+  } else {
+    divAll.innerHTML=topAll.map(([nome,n],i)=>{
+      const item=tutteLeScorti.find(x=>x.nome===nome);
+      const cat=item?.categoria||"";
+      return'<div class="stat-card">'
+        +'<div class="stat-rank">'+["🥇","🥈","🥉","4°","5°"][i]+'</div>'
+        +'<div class="stat-info"><div class="stat-nome">'+nome+'</div>'
+        +'<div class="stat-desc">'+(cat?emojiPerCat(cat)+" "+cat:"—")+'</div></div>'
+        +'<div class="stat-count">'+n+'×</div></div>';
+    }).join("");
+  }
+  const topMese=Object.entries(contatoreMonth).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const divMese=document.getElementById("stats-mese");
+  if(!topMese.length){
+    divMese.innerHTML='<div class="stat-empty">Nessuna ricarica nell'ultimo mese.</div>';
+  } else {
+    divMese.innerHTML=topMese.map(([nome,n],i)=>
+      '<div class="stat-card">'
+      +'<div class="stat-rank">'+(i+1)+'°</div>'
+      +'<div class="stat-info"><div class="stat-nome">'+nome+'</div>'
+      +'<div class="stat-desc">Ricaricato '+n+' volt'+(n===1?'a':'e')+' questo mese</div></div>'
+      +'<div class="stat-count" style="color:var(--warning)">'+n+'×</div></div>'
+    ).join("");
+  }
+}
+
+/* ═══════════ GRAFICO ═══════════ */
+function aggiornaGraficoSelect(){
+  const s=getStorico();
+  const nomi=[...new Set(s.filter(m=>m.icon==="📈"||m.icon==="🛒").map(m=>m.titolo))].sort();
+  const sel=document.getElementById("grafico-select");
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Seleziona prodotto…</option>'+
+    nomi.map(n=>'<option value="'+n+'"'+(n===cur?' selected':'')+'>'+n+'</option>').join("");
+  if(cur&&nomi.includes(cur)) aggiornaGrafico();
+}
+
+function aggiornaGrafico(){
+  const nome=document.getElementById("grafico-select").value;
+  const wrap=document.getElementById("grafico-wrap");
+  if(!nome){ wrap.innerHTML='<div class="grafico-empty">Seleziona un prodotto per vedere il grafico</div>'; return; }
+  const s=getStorico();
+  const settimane=8;
+  const now=Date.now();
+  const bins=Array.from({length:settimane},(_,i)=>({label:"",count:0,ts:now-(settimane-1-i)*7*24*60*60*1000}));
+  s.forEach(m=>{
+    if((m.icon==="📈"||m.icon==="🛒")&&m.titolo===nome){
+      const age=(now-m.ts)/(7*24*60*60*1000);
+      const idx=Math.floor(settimane-1-age);
+      if(idx>=0&&idx<settimane) bins[idx].count++;
+    }
+  });
+  bins.forEach((b,i)=>{
+    const d=new Date(b.ts);
+    b.label=i===settimane-1?"Questa":""+d.toLocaleDateString('it-IT',{day:'numeric',month:'short'});
+  });
+  const max=Math.max(...bins.map(b=>b.count),1);
+  if(bins.every(b=>b.count===0)){ wrap.innerHTML='<div class="grafico-empty">Nessuna ricarica registrata per "'+nome+'"</div>'; return; }
+  wrap.innerHTML='<div class="grafico-bars">'+
+    bins.map(b=>
+      '<div class="grafico-row">'
+      +'<div class="grafico-label">'+b.label+'</div>'
+      +'<div class="grafico-bar-wrap"><div class="grafico-bar-fill" style="width:'+(b.count===0?0:Math.max(b.count/max*100,4))+'%'+(b.count===0?';background:var(--bg2)':'')+'" ></div></div>'
+      +'<div class="grafico-val">'+(b.count>0?b.count+"×":"")+'</div>'
+      +'</div>'
+    ).join("")+'</div>';
 }
 
 /* ═══════════ INIT ═══════════ */
