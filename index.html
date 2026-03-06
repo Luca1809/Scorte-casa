@@ -3,213 +3,396 @@
 <head>
 <meta charset="UTF-8">
 <title>Scorte Casa</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Scorte Casa">
+<meta name="theme-color" content="#2D5A3D" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1A1A1A" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
+  /* ── LIGHT THEME ── */
   :root {
-    --bg: #F7F5F0;
+    --bg: #F5F2EB;
+    --bg2: #EDEAE2;
     --surface: #FFFFFF;
-    --border: #E8E4DC;
-    --text: #1A1815;
-    --text-muted: #8C8880;
+    --surface2: #FAFAF7;
+    --border: #E5E0D5;
+    --text: #1C1A16;
+    --text-muted: #8A8478;
     --accent: #2D5A3D;
-    --accent-light: #EAF2EC;
-    --danger: #C0392B;
+    --accent-light: #E8F2EB;
+    --accent2: #4A7C5F;
+    --warning: #C17B2A;
+    --warning-light: #FDF3E3;
+    --warning-border: #E8C882;
+    --danger: #B03A2E;
     --danger-light: #FDECEA;
-    --warning: #E67E22;
-    --warning-light: #FEF5EC;
-    --radius: 12px;
-    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 8px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.14);
+    --swipe-bg: #B03A2E;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* ── DARK THEME ── */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141412;
+      --bg2: #1E1C18;
+      --surface: #242220;
+      --surface2: #2A2824;
+      --border: #38352F;
+      --text: #F0EDE6;
+      --text-muted: #706C62;
+      --accent: #4A8C60;
+      --accent-light: #1C3024;
+      --accent2: #5FA876;
+      --warning: #D4913A;
+      --warning-light: #251C0E;
+      --warning-border: #5C4015;
+      --danger: #C4483C;
+      --danger-light: #2A1210;
+      --shadow: 0 1px 8px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
   body {
     font-family: 'DM Sans', sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    padding-bottom: 40px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+    overscroll-behavior: none;
   }
 
-  /* HEADER */
+  /* ══════════════════════════════
+     HEADER
+  ══════════════════════════════ */
   header {
     background: var(--accent);
     color: white;
-    padding: 20px 20px 16px;
+    padding: 16px 16px 12px;
+    padding-top: calc(env(safe-area-inset-top, 20px) + 12px);
     position: sticky;
     top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 16px rgba(45,90,61,0.25);
+    z-index: 200;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.2);
+  }
+
+  .header-row1 {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
   }
 
   header h1 {
-    font-size: 1.2rem;
+    font-family: 'Fraunces', serif;
+    font-size: 1.5rem;
     font-weight: 600;
-    letter-spacing: 0.02em;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    color: white;
   }
 
-  header p {
-    font-size: 0.78rem;
+  header h1 em { font-style: italic; font-weight: 300; }
+
+  .header-stats {
+    font-size: 0.73rem;
     opacity: 0.75;
-    margin-top: 2px;
+    text-align: right;
+    line-height: 1.5;
   }
 
-  /* ALERT BANNER */
+  /* Search bar inside header */
+  .search-wrap {
+    position: relative;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.9rem;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  #search-input {
+    width: 100%;
+    padding: 9px 12px 9px 34px;
+    border-radius: 10px;
+    border: none;
+    background: rgba(255,255,255,0.15);
+    color: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: background 0.2s;
+  }
+
+  #search-input::placeholder { color: rgba(255,255,255,0.55); }
+  #search-input:focus { background: rgba(255,255,255,0.22); }
+
+  /* ══════════════════════════════
+     TAB BAR
+  ══════════════════════════════ */
+  .tab-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    z-index: 300;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -2px 16px rgba(0,0,0,0.08);
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 10px 4px 8px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: color 0.15s;
+    position: relative;
+  }
+
+  .tab-btn.active { color: var(--accent); }
+
+  .tab-btn.active .tab-icon-wrap::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 2px 2px 0 0;
+  }
+
+  .tab-icon-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tab-icon { font-size: 1.2rem; line-height: 1; }
+
+  .tab-badge {
+    position: absolute;
+    top: -4px; right: -8px;
+    background: var(--warning);
+    color: white;
+    font-size: 0.58rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 10px;
+    min-width: 16px;
+    text-align: center;
+    display: none;
+  }
+
+  /* ══════════════════════════════
+     VIEWS
+  ══════════════════════════════ */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ══════════════════════════════
+     ALERT BANNER
+  ══════════════════════════════ */
   #alert-banner {
     display: none;
-    margin: 16px 16px 0;
+    margin: 12px 16px 0;
     background: var(--warning-light);
-    border: 1px solid #F0C080;
+    border: 1px solid var(--warning-border);
     border-radius: var(--radius);
-    padding: 12px 14px;
+    padding: 11px 14px;
     font-size: 0.82rem;
     color: var(--warning);
-    font-weight: 500;
   }
 
-  #alert-banner .alert-title {
+  .alert-title {
     font-weight: 600;
-    margin-bottom: 4px;
+    margin-bottom: 5px;
     display: flex;
     align-items: center;
     gap: 6px;
+    font-size: 0.84rem;
   }
 
-  #alert-list {
-    list-style: none;
-    margin-top: 4px;
+  #alert-list { list-style: none; }
+  #alert-list li { padding: 1px 0; font-size: 0.8rem; }
+  #alert-list li::before { content: "· "; font-weight: 700; }
+
+  /* ══════════════════════════════
+     CATEGORIA GRID
+  ══════════════════════════════ */
+  .cat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+    margin: 12px 16px 0;
   }
 
-  #alert-list li::before {
-    content: "· ";
-    font-weight: bold;
-  }
-
-  /* FORM CARD */
-  .form-card {
-    margin: 16px;
+  .cat-card {
     background: var(--surface);
-    border: 1px solid var(--border);
+    border: 1.5px solid var(--border);
     border-radius: var(--radius);
-    padding: 16px;
+    padding: 10px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
     box-shadow: var(--shadow);
   }
 
-  .form-card h2 {
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--text-muted);
-    margin-bottom: 12px;
-  }
-
-  .form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .form-grid input {
-    padding: 10px 12px;
-    border: 1.5px solid var(--border);
-    border-radius: 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    background: var(--bg);
-    color: var(--text);
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .form-grid input:focus {
-    border-color: var(--accent);
-    background: white;
-  }
-
-  .form-grid input.full {
-    grid-column: 1 / -1;
-  }
-
-  .btn-add {
-    grid-column: 1 / -1;
-    padding: 11px;
+  .cat-card.active {
     background: var(--accent);
+    border-color: var(--accent);
     color: white;
-    border: none;
-    border-radius: 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    letter-spacing: 0.02em;
-    transition: opacity 0.2s, transform 0.1s;
+    box-shadow: 0 4px 12px rgba(45,90,61,0.3);
   }
 
-  .btn-add:active { transform: scale(0.98); opacity: 0.9; }
+  .cat-card-emoji { font-size: 1.4rem; line-height: 1; display: block; margin-bottom: 4px; }
+  .cat-card-name { font-size: 0.72rem; font-weight: 600; line-height: 1.2; }
+  .cat-card-count { font-size: 0.65rem; opacity: 0.6; margin-top: 2px; }
+  .cat-card.active .cat-card-count { opacity: 0.75; }
 
-  /* FILTER BAR */
-  .filter-bar {
-    margin: 12px 16px 0;
+  /* ══════════════════════════════
+     TOOLBAR
+  ══════════════════════════════ */
+  .toolbar {
+    margin: 10px 16px 0;
     display: flex;
+    align-items: center;
     gap: 8px;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    scrollbar-width: none;
   }
 
-  .filter-bar::-webkit-scrollbar { display: none; }
-
-  .filter-chip {
+  .sort-btn {
     flex-shrink: 0;
-    padding: 6px 14px;
+    padding: 6px 12px;
     border-radius: 20px;
     border: 1.5px solid var(--border);
     background: var(--surface);
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     font-weight: 500;
     color: var(--text-muted);
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
     transition: all 0.15s;
+    white-space: nowrap;
   }
 
-  .filter-chip.active {
-    background: var(--accent);
+  .sort-btn.active {
+    background: var(--accent-light);
     border-color: var(--accent);
-    color: white;
+    color: var(--accent);
   }
 
-  /* LISTA */
+  /* ══════════════════════════════
+     SECTION TITLE
+  ══════════════════════════════ */
+  .section-title {
+    margin: 12px 16px 6px;
+    font-size: 0.73rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .count-badge {
+    font-size: 0.68rem;
+    background: var(--border);
+    color: var(--text-muted);
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+
+  /* ══════════════════════════════
+     ITEM LIST + SWIPE
+  ══════════════════════════════ */
   #lista {
-    margin: 12px 16px 0;
+    margin: 0 16px;
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+
+  /* swipe container */
+  .swipe-wrap {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .swipe-delete-bg {
+    position: absolute;
+    inset: 0;
+    background: var(--swipe-bg);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 20px;
+    border-radius: var(--radius);
+    font-size: 1.3rem;
+    color: white;
+    font-weight: 700;
+    user-select: none;
   }
 
   .item {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 14px;
     box-shadow: var(--shadow);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    animation: fadeIn 0.25s ease;
+    overflow: hidden;
+    animation: fadeSlide 0.22s ease;
+    position: relative;
+    touch-action: pan-y;
+    transform: translateX(0);
+    transition: transform 0.2s ease;
+    will-change: transform;
   }
 
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  .item.low {
-    border-color: #F0C080;
-    background: var(--warning-light);
+  .item.low { border-color: var(--warning-border); background: var(--warning-light); }
+
+  .item-main {
+    padding: 13px 14px 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
 
   .item-info { flex: 1; min-width: 0; }
@@ -223,12 +406,13 @@
   }
 
   .item-meta {
-    font-size: 0.75rem;
+    font-size: 0.73rem;
     color: var(--text-muted);
-    margin-top: 2px;
+    margin-top: 3px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    flex-wrap: wrap;
   }
 
   .cat-badge {
@@ -237,30 +421,54 @@
     padding: 1px 7px;
     border-radius: 10px;
     font-weight: 500;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
   }
 
-  .low .cat-badge {
-    background: #F0C080;
-    color: #7A4F10;
-  }
+  .low .cat-badge { background: rgba(193,123,42,0.2); color: var(--warning); }
 
   .low-label {
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 600;
     color: var(--warning);
   }
 
+  /* Progress bar */
+  .progress-wrap {
+    margin: 6px 14px 10px;
+  }
+
+  .progress-track {
+    height: 4px;
+    background: var(--bg2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .progress-label {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 3px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Controls */
   .item-controls {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
+    flex-shrink: 0;
   }
 
   .qty-btn {
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
+    width: 32px; height: 32px;
+    border-radius: var(--radius-sm);
     border: 1.5px solid var(--border);
     background: var(--bg);
     font-size: 1.1rem;
@@ -270,38 +478,51 @@
     align-items: center;
     justify-content: center;
     color: var(--text);
-    transition: background 0.15s;
-    line-height: 1;
+    transition: background 0.12s, transform 0.1s;
+    -webkit-appearance: none;
   }
 
-  .qty-btn:active { background: var(--border); }
+  .qty-btn:active { background: var(--border); transform: scale(0.92); }
 
   .qty-display {
     font-family: 'DM Mono', monospace;
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 500;
-    min-width: 26px;
+    min-width: 28px;
     text-align: center;
   }
 
-  .btn-delete {
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
+  /* Action row */
+  .item-actions {
+    display: flex;
+    border-top: 1px solid var(--border);
+  }
+
+  .action-btn {
+    flex: 1;
+    padding: 9px;
     border: none;
     background: none;
     cursor: pointer;
-    color: #C0B8B0;
-    font-size: 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.15s;
-    margin-left: 2px;
+    gap: 5px;
+    transition: background 0.12s, color 0.12s;
   }
 
-  .btn-delete:active { color: var(--danger); }
+  .action-btn:not(:last-child) { border-right: 1px solid var(--border); }
+  .action-btn:active { background: var(--bg2); }
+  .action-btn.edit:active { color: var(--accent); }
+  .action-btn.del:active { color: var(--danger); }
 
+  /* ══════════════════════════════
+     EMPTY STATE
+  ══════════════════════════════ */
   .empty {
     text-align: center;
     padding: 40px 20px;
@@ -309,176 +530,860 @@
     font-size: 0.9rem;
   }
 
-  .empty span { font-size: 2rem; display: block; margin-bottom: 8px; }
+  .empty .big { font-size: 2.2rem; display: block; margin-bottom: 8px; }
 
-  /* SECTION TITLE */
-  .section-title {
-    margin: 16px 16px 4px;
-    font-size: 0.78rem;
+  /* ══════════════════════════════
+     FORM
+  ══════════════════════════════ */
+  .form-card {
+    margin: 14px 16px 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .form-header {
+    padding: 12px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.73rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.09em;
     color: var(--text-muted);
+  }
+
+  .form-body { padding: 14px; }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .form-grid input {
+    padding: 11px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .form-grid input::placeholder { color: var(--text-muted); opacity: 0.7; }
+  .form-grid input:focus { border-color: var(--accent); background: var(--surface); }
+  .form-grid input.full { grid-column: 1 / -1; }
+
+  /* Autocomplete dropdown */
+  .autocomplete-wrap { position: relative; grid-column: 1 / -1; }
+  .autocomplete-wrap input { width: 100%; }
+
+  .autocomplete-list {
+    display: none;
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    background: var(--surface);
+    border: 1.5px solid var(--accent);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    z-index: 500;
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  .autocomplete-list.open { display: block; }
+
+  .autocomplete-item {
+    padding: 10px 12px;
+    font-size: 0.88rem;
+    cursor: pointer;
+    color: var(--text);
+    transition: background 0.1s;
+  }
+
+  .autocomplete-item:active { background: var(--accent-light); }
+
+  .btn-add {
+    grid-column: 1 / -1;
+    padding: 12px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+
+  .btn-add:active { transform: scale(0.98); opacity: 0.85; }
+
+  /* ══════════════════════════════
+     EDIT MODAL
+  ══════════════════════════════ */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 400;
+    align-items: flex-end;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    width: 100%;
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 20px calc(env(safe-area-inset-bottom, 0px) + 28px);
+    box-shadow: var(--shadow-lg);
+    animation: slideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+
+  .modal-handle {
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 18px;
+  }
+
+  .modal h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+
+  .modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .modal-grid input {
+    padding: 11px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    -webkit-appearance: none;
+    transition: border-color 0.2s;
+  }
+
+  .modal-grid input:focus { border-color: var(--accent); background: var(--surface); }
+  .modal-grid input.full { grid-column: 1 / -1; }
+
+  .modal-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .btn-cancel {
+    padding: 12px;
+    background: var(--bg2);
+    color: var(--text-muted);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-save {
+    padding: 12px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .btn-save:active { opacity: 0.85; }
+
+  /* ══════════════════════════════
+     LISTA SPESA
+  ══════════════════════════════ */
+  .spesa-header {
+    margin: 14px 16px 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
 
-  #count-badge {
-    font-size: 0.72rem;
-    background: var(--border);
-    color: var(--text-muted);
-    padding: 1px 8px;
-    border-radius: 10px;
+  .spesa-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.3rem;
+    font-weight: 600;
   }
+
+  .spesa-title em { font-style: italic; font-weight: 300; }
+
+  .btn-share {
+    padding: 8px 14px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn-share:active { opacity: 0.8; }
+
+  #spesa-lista {
+    margin: 8px 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .spesa-item {
+    background: var(--surface);
+    border: 1px solid var(--warning-border);
+    border-radius: var(--radius);
+    padding: 13px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: fadeSlide 0.2s ease;
+    transition: opacity 0.2s;
+  }
+
+  .spesa-item.checked { opacity: 0.55; }
+
+  .spesa-check {
+    width: 24px; height: 24px;
+    border-radius: 7px;
+    border: 2px solid var(--warning-border);
+    background: var(--warning-light);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: white;
+    transition: all 0.18s;
+  }
+
+  .spesa-item.checked .spesa-check {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .spesa-item.checked .spesa-nome { text-decoration: line-through; }
+
+  .spesa-nome { font-weight: 600; font-size: 0.95rem; flex: 1; }
+
+  .spesa-info {
+    font-size: 0.73rem;
+    color: var(--text-muted);
+    text-align: right;
+    flex-shrink: 0;
+    line-height: 1.5;
+  }
+
+  .spesa-info strong { color: var(--warning); font-weight: 600; }
+
+  .spesa-empty {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-muted);
+  }
+
+  .spesa-empty .big { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+  .spesa-empty strong { color: var(--accent); font-family: 'Fraunces', serif; }
 </style>
 </head>
 <body>
 
+<!-- ══ HEADER ══ -->
 <header>
-  <h1>🏠 Scorte Casa</h1>
-  <p>Gestione inventario domestico</p>
+  <div class="header-row1">
+    <h1>Scorte <em>Casa</em></h1>
+    <div class="header-stats" id="header-stats">—</div>
+  </div>
+  <div class="search-wrap" id="search-wrap" style="display:none">
+    <span class="search-icon">🔍</span>
+    <input id="search-input" placeholder="Cerca prodotto…" oninput="onSearch()" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
 </header>
 
-<div id="alert-banner">
-  <div class="alert-title">⚠️ Scorte in esaurimento</div>
-  <ul id="alert-list"></ul>
+<!-- ══ TAB BAR ══ -->
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-inventario" onclick="switchTab('inventario')">
+    <div class="tab-icon-wrap"><span class="tab-icon">📦</span></div>
+    Inventario
+  </button>
+  <button class="tab-btn" id="tab-aggiungi" onclick="switchTab('aggiungi')">
+    <div class="tab-icon-wrap"><span class="tab-icon">＋</span></div>
+    Aggiungi
+  </button>
+  <button class="tab-btn" id="tab-spesa" onclick="switchTab('spesa')" >
+    <div class="tab-icon-wrap">
+      <span class="tab-icon">🛒</span>
+      <span class="tab-badge" id="spesa-badge">0</span>
+    </div>
+    Spesa
+  </button>
 </div>
 
-<div class="form-card">
-  <h2>Aggiungi scorta</h2>
-  <div class="form-grid">
-    <input id="nome" class="full" placeholder="Nome prodotto (es. Pasta)" autocomplete="off">
-    <input id="categoria" placeholder="Categoria" autocomplete="off">
-    <input id="quantita" type="number" placeholder="Quantità" min="0">
-    <input id="minimo" type="number" placeholder="Minimo" min="0">
-    <button class="btn-add" onclick="aggiungi()">+ Aggiungi</button>
+<!-- ══════ VIEW: INVENTARIO ══════ -->
+<div class="view active" id="view-inventario">
+
+  <div id="alert-banner">
+    <div class="alert-title">⚠️ Scorte in esaurimento</div>
+    <ul id="alert-list"></ul>
+  </div>
+
+  <!-- Categoria grid -->
+  <div class="cat-grid" id="cat-grid"></div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <button class="sort-btn" id="btn-sort" onclick="toggleSort()">↕ <span id="sort-label">A–Z</span></button>
+  </div>
+
+  <div class="section-title">
+    <span id="lista-title">Inventario</span>
+    <span class="count-badge" id="count-badge">0</span>
+  </div>
+
+  <div id="lista"></div>
+</div>
+
+<!-- ══════ VIEW: AGGIUNGI ══════ -->
+<div class="view" id="view-aggiungi">
+  <div class="form-card" style="margin-top:14px">
+    <div class="form-header">Nuova scorta</div>
+    <div class="form-body">
+      <div class="form-grid">
+        <input id="nome" class="full" placeholder="Nome prodotto (es. Pasta)" autocomplete="off">
+        <div class="autocomplete-wrap">
+          <input id="categoria" placeholder="Categoria" autocomplete="off" oninput="onCatInput()" onfocus="onCatFocus()" onblur="onCatBlur()">
+          <div class="autocomplete-list" id="cat-autocomplete"></div>
+        </div>
+        <input id="quantita" type="number" placeholder="Quantità" min="0" inputmode="numeric">
+        <input id="minimo" type="number" placeholder="Minimo" min="0" inputmode="numeric">
+        <button class="btn-add" onclick="aggiungi()">+ Aggiungi alla lista</button>
+      </div>
+    </div>
   </div>
 </div>
 
-<div class="filter-bar" id="filter-bar">
-  <button class="filter-chip active" data-cat="tutti" onclick="setFiltro('tutti')">Tutti</button>
+<!-- ══════ VIEW: SPESA ══════ -->
+<div class="view" id="view-spesa">
+  <div class="spesa-header">
+    <div class="spesa-title">Lista della <em>Spesa</em></div>
+    <button class="btn-share" onclick="condividiSpesa()">📤 Condividi</button>
+  </div>
+  <div class="section-title" style="margin-top:10px">
+    <span>Da comprare</span>
+    <span class="count-badge" id="spesa-count">0</span>
+  </div>
+  <div id="spesa-lista"></div>
 </div>
 
-<div class="section-title">
-  <span>Inventario</span>
-  <span id="count-badge">0</span>
+<!-- ══════ MODAL MODIFICA ══════ -->
+<div class="modal-overlay" id="modal-overlay" onclick="chiudiModalOverlay(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>Modifica scorta</h3>
+    <div class="modal-grid">
+      <input id="edit-nome" class="full" placeholder="Nome" autocomplete="off">
+      <input id="edit-categoria" placeholder="Categoria" autocomplete="off">
+      <input id="edit-quantita" type="number" placeholder="Quantità" min="0" inputmode="numeric">
+      <input id="edit-minimo" type="number" placeholder="Minimo" min="0" inputmode="numeric">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="chiudiModal()">Annulla</button>
+      <button class="btn-save" onclick="salvaModifica()">Salva</button>
+    </div>
+  </div>
 </div>
-
-<div id="lista"></div>
 
 <script>
+/* ═══════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════ */
 const supabaseUrl = "https://igachimyxuixxltcjsnw.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnYWNoaW15eHVpeHhsdGNqc253Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNDc2MzgsImV4cCI6MjA4NzYyMzYzOH0.ZCxBWrLZNISSnOu-oxFv3zrW2aZsiNljUfQR831arko";
 const client = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+/* ═══════════════════════════════════════
+   STATE
+═══════════════════════════════════════ */
 let tutteLeScorti = [];
 let filtroAttivo = "tutti";
+let sortMode = "az";
+let searchQuery = "";
+let editingId = null;
+let spesaChecked = new Set();
+let tabAttivo = "inventario";
 
-async function carica() {
-  const { data, error } = await client.from("scorte").select("*").order("nome");
-  if (error) { console.error("Errore carica:", error); return; }
-  tutteLeScorti = data || [];
-  aggiornaFiltri();
-  mostra();
-  mostraAlert();
+// emoji per categoria (fallback generico)
+const catEmoji = {
+  "cucina": "🍳", "alimentari": "🛒", "dispensa": "🥫", "frigo": "❄️",
+  "bagno": "🛁", "pulizia": "🧹", "igiene": "🧴", "detersivi": "🧺",
+  "cantina": "🍷", "bevande": "🥤", "snack": "🍿", "surgelati": "🧊",
+  "cura": "💊", "farmacia": "💊", "animali": "🐾", "giardino": "🌱",
+  "casa": "🏠", "ufficio": "📎", "sport": "🏋️"
+};
+
+function emojiPerCat(cat) {
+  if (!cat) return "📦";
+  const k = cat.toLowerCase();
+  for (const [key, e] of Object.entries(catEmoji)) {
+    if (k.includes(key)) return e;
+  }
+  return "📦";
 }
 
-function aggiornaFiltri() {
-  const categorie = [...new Set(tutteLeScorti.map(i => i.categoria).filter(Boolean))];
-  const bar = document.getElementById("filter-bar");
-  bar.innerHTML = `<button class="filter-chip ${filtroAttivo === 'tutti' ? 'active' : ''}" onclick="setFiltro('tutti')">Tutti</button>`;
+/* ═══════════════════════════════════════
+   TABS
+═══════════════════════════════════════ */
+function switchTab(tab) {
+  tabAttivo = tab;
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("view-" + tab).classList.add("active");
+  document.getElementById("tab-" + tab).classList.add("active");
+
+  // search bar visibile solo nell'inventario
+  document.getElementById("search-wrap").style.display = tab === "inventario" ? "block" : "none";
+
+  if (tab === "spesa") mostraSpesa();
+  if (tab === "inventario") {
+    document.getElementById("search-input").value = "";
+    searchQuery = "";
+    mostra();
+  }
+}
+
+/* ═══════════════════════════════════════
+   CARICA
+═══════════════════════════════════════ */
+async function carica() {
+  const { data, error } = await client.from("scorte").select("*");
+  if (error) { console.error("Errore carica:", error); return; }
+  tutteLeScorti = data || [];
+  aggiornaCatGrid();
+  mostra();
+  mostraAlert();
+  aggiornaBadge();
+  const tot = tutteLeScorti.length;
+  const basse = tutteLeScorti.filter(i => i.quantita <= i.minimo).length;
+  document.getElementById("header-stats").textContent =
+    tot + " scort" + (tot === 1 ? "a" : "e") + (basse > 0 ? " · ⚠ " + basse : "");
+  if (tabAttivo === "spesa") mostraSpesa();
+}
+
+/* ═══════════════════════════════════════
+   CATEGORIA GRID
+═══════════════════════════════════════ */
+function aggiornaCatGrid() {
+  const categorie = [...new Set(tutteLeScorti.map(i => i.categoria).filter(Boolean))].sort();
+  const grid = document.getElementById("cat-grid");
+
+  const allCount = tutteLeScorti.length;
+  let html = `
+    <div class="cat-card ${filtroAttivo === 'tutti' ? 'active' : ''}" onclick="setFiltro('tutti')">
+      <span class="cat-card-emoji">🏠</span>
+      <div class="cat-card-name">Tutti</div>
+      <div class="cat-card-count">${allCount}</div>
+    </div>`;
+
   categorie.forEach(cat => {
-    bar.innerHTML += `<button class="filter-chip ${filtroAttivo === cat ? 'active' : ''}" onclick="setFiltro('${cat.replace(/'/g, "\\'")}')">${cat}</button>`;
+    const cnt = tutteLeScorti.filter(i => i.categoria === cat).length;
+    const em = emojiPerCat(cat);
+    html += `
+      <div class="cat-card ${filtroAttivo === cat ? 'active' : ''}" onclick="setFiltro('${cat.replace(/'/g, "\\'")}')">
+        <span class="cat-card-emoji">${em}</span>
+        <div class="cat-card-name">${cat}</div>
+        <div class="cat-card-count">${cnt}</div>
+      </div>`;
   });
+
+  grid.innerHTML = html;
 }
 
 function setFiltro(cat) {
   filtroAttivo = cat;
-  aggiornaFiltri();
+  aggiornaCatGrid();
   mostra();
 }
 
+/* ═══════════════════════════════════════
+   SEARCH
+═══════════════════════════════════════ */
+function onSearch() {
+  searchQuery = document.getElementById("search-input").value.trim().toLowerCase();
+  mostra();
+  // se si cerca, reset filtro categoria visivamente
+  if (searchQuery) {
+    document.getElementById("lista-title").textContent = "Risultati";
+  } else {
+    document.getElementById("lista-title").textContent = "Inventario";
+  }
+}
+
+/* ═══════════════════════════════════════
+   SORT
+═══════════════════════════════════════ */
+function toggleSort() {
+  const modes = ["az", "za", "low"];
+  const labels = { az: "A–Z", za: "Z–A", low: "⚠ prima" };
+  sortMode = modes[(modes.indexOf(sortMode) + 1) % modes.length];
+  document.getElementById("sort-label").textContent = labels[sortMode];
+  document.getElementById("btn-sort").classList.toggle("active", sortMode !== "az");
+  mostra();
+}
+
+function sortLista(lista) {
+  if (sortMode === "az") return [...lista].sort((a,b) => a.nome.localeCompare(b.nome));
+  if (sortMode === "za") return [...lista].sort((a,b) => b.nome.localeCompare(a.nome));
+  if (sortMode === "low") return [...lista].sort((a,b) => {
+    const aL = a.quantita <= a.minimo ? 0 : 1;
+    const bL = b.quantita <= b.minimo ? 0 : 1;
+    return aL - bL || a.nome.localeCompare(b.nome);
+  });
+  return lista;
+}
+
+/* ═══════════════════════════════════════
+   ALERT
+═══════════════════════════════════════ */
 function mostraAlert() {
   const basse = tutteLeScorti.filter(i => i.quantita <= i.minimo);
   const banner = document.getElementById("alert-banner");
-  const list = document.getElementById("alert-list");
-  if (basse.length === 0) {
-    banner.style.display = "none";
-    return;
-  }
+  if (basse.length === 0) { banner.style.display = "none"; return; }
   banner.style.display = "block";
-  list.innerHTML = basse.map(i => `<li>${i.nome} (${i.quantita} rimasti, min. ${i.minimo})</li>`).join("");
+  document.getElementById("alert-list").innerHTML =
+    basse.map(i => `<li>${i.nome} — ${i.quantita} rimasti (min. ${i.minimo})</li>`).join("");
 }
 
+function aggiornaBadge() {
+  const n = tutteLeScorti.filter(i => i.quantita <= i.minimo).length;
+  const badge = document.getElementById("spesa-badge");
+  badge.style.display = n > 0 ? "block" : "none";
+  badge.textContent = n;
+}
+
+/* ═══════════════════════════════════════
+   AUTOCOMPLETE CATEGORIA
+═══════════════════════════════════════ */
+let catBlurTimeout = null;
+
+function onCatInput() {
+  const val = document.getElementById("categoria").value.trim().toLowerCase();
+  const categorie = [...new Set(tutteLeScorti.map(i => i.categoria).filter(Boolean))];
+  const matches = val ? categorie.filter(c => c.toLowerCase().startsWith(val)) : categorie;
+  renderAutocomplete(matches);
+}
+
+function onCatFocus() {
+  clearTimeout(catBlurTimeout);
+  onCatInput();
+}
+
+function onCatBlur() {
+  catBlurTimeout = setTimeout(() => {
+    document.getElementById("cat-autocomplete").classList.remove("open");
+  }, 200);
+}
+
+function renderAutocomplete(matches) {
+  const list = document.getElementById("cat-autocomplete");
+  if (matches.length === 0) { list.classList.remove("open"); return; }
+  list.innerHTML = matches.map(c =>
+    `<div class="autocomplete-item" onclick="selectCat('${c.replace(/'/g, "\\'")}')">${emojiPerCat(c)} ${c}</div>`
+  ).join("");
+  list.classList.add("open");
+}
+
+function selectCat(cat) {
+  document.getElementById("categoria").value = cat;
+  document.getElementById("cat-autocomplete").classList.remove("open");
+}
+
+/* ═══════════════════════════════════════
+   AGGIUNGI
+═══════════════════════════════════════ */
 async function aggiungi() {
   const nome = document.getElementById("nome").value.trim();
   const categoria = document.getElementById("categoria").value.trim();
   const quantita = parseInt(document.getElementById("quantita").value);
   const minimo = parseInt(document.getElementById("minimo").value);
-
-  if (!nome || isNaN(quantita) || isNaN(minimo)) {
-    alert("Compila tutti i campi correttamente.");
-    return;
-  }
-
+  if (!nome || isNaN(quantita) || isNaN(minimo)) { alert("Compila tutti i campi."); return; }
   const { error } = await client.from("scorte").insert([{ nome, categoria, quantita, minimo }]);
-  if (error) { console.error("Errore inserimento:", error); alert("Errore: " + error.message); return; }
-
+  if (error) { alert("Errore: " + error.message); return; }
   ["nome","categoria","quantita","minimo"].forEach(id => document.getElementById(id).value = "");
-  carica();
+  await carica();
+  switchTab("inventario");
 }
 
+/* ═══════════════════════════════════════
+   AGGIORNA QUANTITÀ
+═══════════════════════════════════════ */
 async function aggiorna(id, nuovaQ) {
   if (nuovaQ < 0) nuovaQ = 0;
   const { error } = await client.from("scorte").update({ quantita: nuovaQ }).eq("id", id);
-  if (error) { console.error("Errore aggiornamento:", error); return; }
+  if (error) { console.error(error); return; }
   carica();
 }
 
+/* ═══════════════════════════════════════
+   ELIMINA
+═══════════════════════════════════════ */
 async function elimina(id, nome) {
   if (!confirm(`Eliminare "${nome}"?`)) return;
   const { error } = await client.from("scorte").delete().eq("id", id);
-  if (error) { console.error("Errore eliminazione:", error); return; }
+  if (error) { console.error(error); return; }
   carica();
 }
 
+/* ═══════════════════════════════════════
+   SWIPE TO DELETE
+═══════════════════════════════════════ */
+function setupSwipe(el, id, nome) {
+  let startX = 0, currentX = 0, swiping = false;
+  const THRESHOLD = 80;
+
+  el.addEventListener("touchstart", e => {
+    startX = e.touches[0].clientX;
+    swiping = true;
+    el.style.transition = "none";
+  }, { passive: true });
+
+  el.addEventListener("touchmove", e => {
+    if (!swiping) return;
+    currentX = e.touches[0].clientX - startX;
+    if (currentX < 0) {
+      el.style.transform = `translateX(${Math.max(currentX, -120)}px)`;
+    }
+  }, { passive: true });
+
+  el.addEventListener("touchend", () => {
+    swiping = false;
+    el.style.transition = "transform 0.2s ease";
+    if (currentX < -THRESHOLD) {
+      el.style.transform = "translateX(-100%)";
+      el.style.opacity = "0";
+      setTimeout(() => elimina(id, nome), 200);
+    } else {
+      el.style.transform = "translateX(0)";
+    }
+    currentX = 0;
+  });
+}
+
+/* ═══════════════════════════════════════
+   MODAL MODIFICA
+═══════════════════════════════════════ */
+function apriModal(id) {
+  const item = tutteLeScorti.find(i => i.id === id);
+  if (!item) return;
+  editingId = id;
+  document.getElementById("edit-nome").value = item.nome;
+  document.getElementById("edit-categoria").value = item.categoria || "";
+  document.getElementById("edit-quantita").value = item.quantita;
+  document.getElementById("edit-minimo").value = item.minimo;
+  document.getElementById("modal-overlay").classList.add("open");
+}
+
+function chiudiModal() {
+  document.getElementById("modal-overlay").classList.remove("open");
+  editingId = null;
+}
+
+function chiudiModalOverlay(e) {
+  if (e.target === document.getElementById("modal-overlay")) chiudiModal();
+}
+
+async function salvaModifica() {
+  if (!editingId) return;
+  const nome = document.getElementById("edit-nome").value.trim();
+  const categoria = document.getElementById("edit-categoria").value.trim();
+  const quantita = parseInt(document.getElementById("edit-quantita").value);
+  const minimo = parseInt(document.getElementById("edit-minimo").value);
+  if (!nome || isNaN(quantita) || isNaN(minimo)) { alert("Compila tutti i campi."); return; }
+  const { error } = await client.from("scorte").update({ nome, categoria, quantita, minimo }).eq("id", editingId);
+  if (error) { alert("Errore: " + error.message); return; }
+  chiudiModal();
+  carica();
+}
+
+/* ═══════════════════════════════════════
+   LISTA SPESA
+═══════════════════════════════════════ */
+function mostraSpesa() {
+  const basse = tutteLeScorti.filter(i => i.quantita <= i.minimo);
+  spesaChecked = new Set([...spesaChecked].filter(id => basse.find(i => i.id === id)));
+  document.getElementById("spesa-count").textContent = basse.length;
+  const div = document.getElementById("spesa-lista");
+
+  if (basse.length === 0) {
+    div.innerHTML = `<div class="spesa-empty"><span class="big">✅</span><p>Tutto ok! Nessuna scorta sotto il minimo.<br><strong>Ben forniti.</strong></p></div>`;
+    return;
+  }
+
+  const sorted = [...basse].sort((a,b) => {
+    const ac = spesaChecked.has(a.id) ? 1 : 0;
+    const bc = spesaChecked.has(b.id) ? 1 : 0;
+    return ac - bc || a.nome.localeCompare(b.nome);
+  });
+
+  div.innerHTML = sorted.map(item => {
+    const checked = spesaChecked.has(item.id);
+    return `
+      <div class="spesa-item ${checked ? 'checked' : ''}">
+        <div class="spesa-check" onclick="toggleSpesa(${item.id})">${checked ? '✓' : ''}</div>
+        <div class="spesa-nome">${item.nome}</div>
+        <div class="spesa-info">
+          ${item.categoria ? `<span>${emojiPerCat(item.categoria)} ${item.categoria}</span><br>` : ''}
+          <strong>${item.quantita} rimasti</strong>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function toggleSpesa(id) {
+  if (spesaChecked.has(id)) spesaChecked.delete(id);
+  else spesaChecked.add(id);
+  mostraSpesa();
+}
+
+function condividiSpesa() {
+  const basse = tutteLeScorti.filter(i => i.quantita <= i.minimo);
+  if (basse.length === 0) { alert("Nessun prodotto da comprare!"); return; }
+  const testo = "🛒 Lista della spesa\n\n" +
+    basse.map(i => `${spesaChecked.has(i.id) ? '✅' : '☐'} ${i.nome}${i.categoria ? ' (' + i.categoria + ')' : ''}`).join("\n");
+  if (navigator.share) {
+    navigator.share({ title: "Lista della spesa", text: testo });
+  } else {
+    navigator.clipboard.writeText(testo).then(() => alert("Lista copiata negli appunti!"));
+  }
+}
+
+/* ═══════════════════════════════════════
+   PROGRESS BAR
+═══════════════════════════════════════ */
+function progressColor(pct) {
+  if (pct <= 0.25) return "#B03A2E";
+  if (pct <= 0.6)  return "#C17B2A";
+  return "#2D5A3D";
+}
+
+function progressInfo(item) {
+  const max = Math.max(item.minimo * 3, item.quantita + 1, 10);
+  const pct = Math.min(item.quantita / max, 1);
+  const fill = pct * 100;
+  const color = progressColor(item.quantita <= item.minimo ? 0 : pct);
+  return { fill, color, pct };
+}
+
+/* ═══════════════════════════════════════
+   MOSTRA LISTA
+═══════════════════════════════════════ */
 function mostra() {
-  const lista = filtroAttivo === "tutti"
+  let lista = filtroAttivo === "tutti"
     ? tutteLeScorti
     : tutteLeScorti.filter(i => i.categoria === filtroAttivo);
 
+  if (searchQuery) {
+    lista = tutteLeScorti.filter(i =>
+      i.nome.toLowerCase().includes(searchQuery) ||
+      (i.categoria || "").toLowerCase().includes(searchQuery)
+    );
+  }
+
+  lista = sortLista(lista);
   document.getElementById("count-badge").textContent = lista.length;
   const div = document.getElementById("lista");
   div.innerHTML = "";
 
   if (lista.length === 0) {
-    div.innerHTML = `<div class="empty"><span>📦</span>Nessuna scorta${filtroAttivo !== 'tutti' ? ' in questa categoria' : ''}.</div>`;
+    div.innerHTML = `<div class="empty"><span class="big">${searchQuery ? '🔍' : '📦'}</span>${searchQuery ? 'Nessun risultato per "' + searchQuery + '"' : 'Nessuna scorta' + (filtroAttivo !== 'tutti' ? ' in questa categoria' : '') + '.'}</div>`;
     return;
   }
 
   lista.forEach(item => {
     const low = item.quantita <= item.minimo;
-    div.innerHTML += `
-      <div class="item ${low ? 'low' : ''}">
-        <div class="item-info">
-          <div class="item-nome">${item.nome}</div>
-          <div class="item-meta">
-            ${item.categoria ? `<span class="cat-badge">${item.categoria}</span>` : ''}
-            ${low ? `<span class="low-label">⚠ sotto minimo</span>` : `<span>min. ${item.minimo}</span>`}
+    const safeName = item.nome.replace(/'/g, "\\'");
+    const { fill, color } = progressInfo(item);
+
+    const wrap = document.createElement("div");
+    wrap.className = "swipe-wrap";
+    wrap.innerHTML = `
+      <div class="swipe-delete-bg">🗑</div>
+      <div class="item ${low ? 'low' : ''}" id="item-${item.id}">
+        <div class="item-main">
+          <div class="item-info">
+            <div class="item-nome">${item.nome}</div>
+            <div class="item-meta">
+              ${item.categoria ? `<span class="cat-badge">${emojiPerCat(item.categoria)} ${item.categoria}</span>` : ''}
+              ${low ? `<span class="low-label">⚠ sotto minimo</span>` : `<span>min. ${item.minimo}</span>`}
+            </div>
+          </div>
+          <div class="item-controls">
+            <button class="qty-btn" onclick="aggiorna(${item.id}, ${item.quantita - 1})">−</button>
+            <span class="qty-display">${item.quantita}</span>
+            <button class="qty-btn" onclick="aggiorna(${item.id}, ${item.quantita + 1})">+</button>
           </div>
         </div>
-        <div class="item-controls">
-          <button class="qty-btn" onclick="aggiorna(${item.id}, ${item.quantita - 1})">−</button>
-          <span class="qty-display">${item.quantita}</span>
-          <button class="qty-btn" onclick="aggiorna(${item.id}, ${item.quantita + 1})">+</button>
-          <button class="btn-delete" onclick="elimina(${item.id}, '${item.nome.replace(/'/g, "\\'")}')">🗑</button>
+        <div class="progress-wrap">
+          <div class="progress-track">
+            <div class="progress-fill" style="width:${fill}%; background:${color}"></div>
+          </div>
+          <div class="progress-label">
+            <span>${item.quantita} in stock</span>
+            <span>min. ${item.minimo}</span>
+          </div>
         </div>
-      </div>
-    `;
+        <div class="item-actions">
+          <button class="action-btn edit" onclick="apriModal(${item.id})">✏️ Modifica</button>
+          <button class="action-btn del" onclick="elimina(${item.id}, '${safeName}')">🗑 Elimina</button>
+        </div>
+      </div>`;
+
+    div.appendChild(wrap);
+    setupSwipe(wrap.querySelector(".item"), item.id, item.nome);
   });
 }
 
+/* ═══════════════════════════════════════
+   INIT
+═══════════════════════════════════════ */
 carica();
 </script>
 </body>
