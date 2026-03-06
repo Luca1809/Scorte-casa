@@ -335,6 +335,29 @@ header h1 em{font-style:italic;font-weight:300}
   display:none}
 .btn-salva-acquisti.visible{display:block}
 
+/* ── FIELD LABELS (modal) ── */
+.field-wrap{display:flex;flex-direction:column;gap:4px}
+.field-label{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);padding:0 2px}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* ── STORICO restyling ── */
+.storico-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:12px 14px;display:flex;align-items:flex-start;gap:12px;box-shadow:var(--shadow);animation:fadeSlide .2s ease}
+.storico-icon-wrap{font-size:1.3rem;flex-shrink:0;width:30px;text-align:center;margin-top:1px}
+.storico-info{flex:1;min-width:0}
+.storico-titolo{font-size:.92rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.storico-dettaglio{font-size:.78rem;color:var(--text-muted);margin-top:3px;line-height:1.4}
+.storico-time-wrap{flex-shrink:0;text-align:right}
+.storico-giorno{font-size:.72rem;font-weight:600;color:var(--accent)}
+.storico-ora{font-size:.68rem;color:var(--text-muted);font-family:'DM Mono',monospace;margin-top:1px}
+
+/* ── CAT MANAGER: edit button + rename input ── */
+.cat-manager-edit{border:none;background:none;color:var(--text-muted);font-size:.9rem;cursor:pointer;
+  padding:4px 6px;border-radius:6px;transition:color .15s}
+.cat-manager-edit:active{color:var(--accent)}
+.cat-rename-input{flex:1;padding:6px 10px;border:1.5px solid var(--accent);border-radius:var(--radius-sm);
+  font-family:'DM Sans',sans-serif;font-size:.88rem;background:var(--surface);color:var(--text);outline:none}
+
 /* ── CONFIRM DIALOG ── */
 .confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;
   align-items:flex-end;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
@@ -476,7 +499,7 @@ header h1 em{font-style:italic;font-weight:300}
 <!-- ══ IMPOSTAZIONI ══ -->
 <div class="view" id="view-impostazioni">
   <div class="settings-page">
-    <div class="settings-title">Impost<em>azioni</em></div>
+    <div class="settings-title">Impostazioni</div>
 
     <!-- ASPETTO -->
     <div class="settings-group">
@@ -590,13 +613,32 @@ header h1 em{font-style:italic;font-weight:300}
     <div class="modal-handle"></div>
     <h3>Modifica scorta</h3>
     <div class="modal-stack">
-      <input id="edit-nome" placeholder="Nome" autocomplete="off">
-      <input id="edit-categoria" placeholder="Categoria" autocomplete="off">
-      <div class="modal-row">
-        <input id="edit-quantita" type="number" placeholder="Quantità" min="0" inputmode="numeric">
-        <input id="edit-minimo" type="number" placeholder="Minimo" min="0" inputmode="numeric">
+      <div class="field-wrap">
+        <label class="field-label">Nome prodotto</label>
+        <input id="edit-nome" placeholder="es. Carta igienica" autocomplete="off">
       </div>
-      <input id="edit-note" placeholder="Note (es. marca, dove comprare…)" autocomplete="off">
+      <div class="field-wrap">
+        <label class="field-label">Categoria</label>
+        <div class="autocomplete-wrap">
+          <input id="edit-categoria" placeholder="es. Bagno" autocomplete="off"
+            oninput="onEditCatInput()" onfocus="onEditCatFocus()" onblur="onEditCatBlur()">
+          <div class="autocomplete-list" id="edit-cat-autocomplete"></div>
+        </div>
+      </div>
+      <div class="modal-row">
+        <div class="field-wrap">
+          <label class="field-label">Quantità attuale</label>
+          <input id="edit-quantita" type="number" placeholder="0" min="0" inputmode="numeric">
+        </div>
+        <div class="field-wrap">
+          <label class="field-label">Soglia minima</label>
+          <input id="edit-minimo" type="number" placeholder="0" min="0" inputmode="numeric">
+        </div>
+      </div>
+      <div class="field-wrap">
+        <label class="field-label">Note</label>
+        <input id="edit-note" placeholder="es. marca, dove comprare…" autocomplete="off">
+      </div>
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="chiudiModal()">Annulla</button>
@@ -700,6 +742,9 @@ function switchTab(tab){
 
 /* ═══════════ CARICA DB ═══════════ */
 async function carica(){
+  // Carica categorie dal DB (sincronizzate tra tutti i dispositivi)
+  const{data:catData}=await client.from("categorie").select("nome").order("nome");
+  if(catData) categoriePersonalizzate=catData.map(r=>r.nome);
   const{data,error}=await client.from("scorte").select("*");
   if(error){console.error(error);return;}
   tutteLeScorti=data||[];
@@ -809,6 +854,26 @@ function selectCat(cat){
   document.getElementById("categoria").value=cat;
   document.getElementById("cat-autocomplete").classList.remove("open");
 }
+// Autocomplete per modal modifica
+let editCatBlurTO=null;
+function onEditCatInput(){
+  const val=document.getElementById("edit-categoria").value.trim().toLowerCase();
+  const cats=tutteLeCategorie();
+  const matches=val?cats.filter(c=>c.toLowerCase().startsWith(val)):cats;
+  renderEditAutocomplete(matches);
+}
+function onEditCatFocus(){ clearTimeout(editCatBlurTO); onEditCatInput(); }
+function onEditCatBlur(){ editCatBlurTO=setTimeout(()=>document.getElementById("edit-cat-autocomplete").classList.remove("open"),200); }
+function renderEditAutocomplete(matches){
+  const list=document.getElementById("edit-cat-autocomplete");
+  if(!matches.length){list.classList.remove("open");return;}
+  list.innerHTML=matches.map(c=>`<div class="autocomplete-item" onclick="selectEditCat('${c.replace(/'/g,"\'")}')">${emojiPerCat(c)} ${c}</div>`).join("");
+  list.classList.add("open");
+}
+function selectEditCat(cat){
+  document.getElementById("edit-categoria").value=cat;
+  document.getElementById("edit-cat-autocomplete").classList.remove("open");
+}
 
 /* ═══════════ AGGIUNGI ═══════════ */
 async function aggiungi(){
@@ -833,10 +898,11 @@ async function aggiorna(id,nuovaQ){
   const vecchia=item?item.quantita:null;
   const{error}=await client.from("scorte").update({quantita:nuovaQ}).eq("id",id);
   if(error){console.error(error);return;}
-  if(item&&vecchia!==null){
+  if(item&&vecchia!==null&&vecchia!==nuovaQ){
     const delta=nuovaQ-vecchia;
     const icon=delta>0?"📈":"📉";
-    aggiungiStorico(icon,item.nome,`${vecchia} → ${nuovaQ} (${delta>0?"+":""}${delta})`);
+    const verb=delta>0?"Aumentato":"Diminuito";
+    aggiungiStorico(icon,item.nome,`${verb} di ${Math.abs(delta)} — ora ${nuovaQ} (era ${vecchia})`);
   }
   carica();
 }
@@ -926,7 +992,16 @@ async function salvaModifica(){
   if(!nome||isNaN(quantita)||isNaN(minimo)){alert("Compila tutti i campi.");return;}
   const{error}=await client.from("scorte").update({nome,categoria,quantita,minimo,note}).eq("id",editingId);
   if(error){alert("Errore: "+error.message);return;}
-  aggiungiStorico("✏️","Modifica scorta",nome);
+  // Log dettagliato: confronta con valori precedenti
+  const vecchioItem=tutteLeScorti.find(i=>i.id===editingId);
+  if(vecchioItem){
+    const changes=[];
+    if(vecchioItem.nome!==nome) changes.push(`Nome: "${vecchioItem.nome}" → "${nome}"`);
+    if(vecchioItem.categoria!==(categoria||null)&&vecchioItem.categoria!==categoria) changes.push(`Categoria: ${vecchioItem.categoria||'—'} → ${categoria||'—'}`);
+    if(vecchioItem.quantita!==quantita) changes.push(`Quantità: ${vecchioItem.quantita} → ${quantita}`);
+    if(vecchioItem.minimo!==minimo) changes.push(`Soglia minima: ${vecchioItem.minimo} → ${minimo}`);
+    if(changes.length) aggiungiStorico("✏️",nome,changes.join(' · '));
+  }
   chiudiModal();carica();
 }
 
@@ -947,17 +1022,22 @@ function mostraSpesa(){
   if(acquistoMode){
     // Modalità fare-spesa: controlli +/- per aggiornare quantità direttamente
     div.innerHTML=sorted.map(item=>{
-      const qty=acquistoQty[item.id]??item.quantita;
-      return`<div class="spesa-item">
-        <div class="spesa-info" style="flex:1">
-          <div class="spesa-nome">${item.nome}</div>
-          <div style="font-size:.73rem;color:var(--text-muted)">${item.quantita} in stock · min. ${item.minimo}</div>
+      // qty = quante ne stai AGGIUNGENDO (default 0, poi si somma all'esistente)
+      const aggiunto=acquistoQty[item.id]??0;
+      const nuovoTot=item.quantita+aggiunto;
+      return`<div class="spesa-item" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="spesa-info" style="flex:1">
+            <div class="spesa-nome">${item.nome}</div>
+            <div style="font-size:.73rem;color:var(--text-muted)">Hai ${item.quantita} · min. ${item.minimo}</div>
+          </div>
+          <div class="spesa-qty-controls">
+            <button class="spesa-qty-btn" onclick="cambiaAcquistoQty(${item.id},-1)">−</button>
+            <span class="spesa-qty-val" id="aqty-${item.id}">${aggiunto>0?'+'+aggiunto:'0'}</span>
+            <button class="spesa-qty-btn" onclick="cambiaAcquistoQty(${item.id},1)">+</button>
+          </div>
         </div>
-        <div class="spesa-qty-controls">
-          <button class="spesa-qty-btn" onclick="cambiaAcquistoQty(${item.id},-1,${item.quantita})">−</button>
-          <span class="spesa-qty-val" id="aqty-${item.id}">${qty}</span>
-          <button class="spesa-qty-btn" onclick="cambiaAcquistoQty(${item.id},1,${item.quantita})">+</button>
-        </div>
+        ${aggiunto>0?`<div style="font-size:.75rem;color:var(--accent);font-weight:600;padding:0 2px">→ Dopo la spesa: ${nuovoTot}</div>`:''}
       </div>`;
     }).join("");
   } else {
@@ -974,12 +1054,12 @@ function mostraSpesa(){
     }).join("");
   }
 }
-function cambiaAcquistoQty(id,delta,base){
-  const cur=acquistoQty[id]??base;
+function cambiaAcquistoQty(id,delta){
+  const cur=acquistoQty[id]??0;
   const nv=Math.max(0,cur+delta);
   acquistoQty[id]=nv;
-  const el=document.getElementById("aqty-"+id);
-  if(el) el.textContent=nv;
+  // re-render solo quella riga per non perdere stato
+  mostraSpesa();
 }
 function toggleSpesa(id){
   if(spesaChecked.has(id))spesaChecked.delete(id);else spesaChecked.add(id);
@@ -1018,27 +1098,37 @@ function aggiungiStorico(icon,titolo,dettaglio){
 function svuotaStorico(){
   mostraConfirm("Cancellare tutto lo storico?",()=>{
     localStorage.removeItem("scorte-storico");
+    document.getElementById("storico-subtitle").textContent="Nessun movimento";
     mostraStorico();
   },null);
 }
 function mostraStorico(){
   const s=getStorico();
   const div=document.getElementById("storico-lista");
+  const subtitle=document.getElementById("storico-subtitle");
   if(!s.length){
+    subtitle.textContent="Nessun movimento";
     div.innerHTML=`<div class="storico-empty"><span class="big">📋</span>Nessun movimento registrato ancora.</div>`;
     return;
   }
-  document.getElementById("storico-subtitle").textContent=`${s.length} moviment${s.length===1?'o':'i'}`;
+  subtitle.textContent=`${s.length} moviment${s.length===1?'o':'i'}`;
+  const oggi=new Date(); const ieri=new Date(oggi-86400000);
   div.innerHTML=s.map(m=>{
     const d=new Date(m.ts);
-    const timeStr=d.toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    const isOggi=d.toDateString()===oggi.toDateString();
+    const isIeri=d.toDateString()===ieri.toDateString();
+    const giorno=isOggi?'Oggi':isIeri?'Ieri':d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
+    const ora=d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
     return`<div class="storico-item">
-      <div class="storico-icon">${m.icon}</div>
+      <div class="storico-icon-wrap">${m.icon}</div>
       <div class="storico-info">
-        <div class="storico-nome">${m.titolo}</div>
+        <div class="storico-titolo">${m.titolo}</div>
         <div class="storico-dettaglio">${m.dettaglio}</div>
       </div>
-      <div class="storico-time">${timeStr}</div>
+      <div class="storico-time-wrap">
+        <div class="storico-giorno">${giorno}</div>
+        <div class="storico-ora">${ora}</div>
+      </div>
     </div>`;
   }).join("");
 }
@@ -1061,12 +1151,14 @@ function toggleAcquistoMode(){
 async function salvaAcquisti(){
   const entries=Object.entries(acquistoQty);
   if(!entries.length){ alert("Nessuna quantità modificata."); return; }
-  for(const[id,qty] of entries){
+  for(const[id,aggiunto] of entries){
     const numId=parseInt(id);
+    if(aggiunto===0) continue;
     const item=tutteLeScorti.find(i=>i.id===numId);
     if(!item) continue;
-    await client.from("scorte").update({quantita:qty}).eq("id",numId);
-    aggiungiStorico("🛒",item.nome,`Acquistato: ${item.quantita} → ${qty}`);
+    const nuovaQ=item.quantita+aggiunto;
+    await client.from("scorte").update({quantita:nuovaQ}).eq("id",numId);
+    aggiungiStorico("🛒",item.nome,`Acquistati ${aggiunto} — ${item.quantita} → ${nuovaQ}`);
   }
   acquistoQty={};
   acquistoMode=false;
@@ -1096,27 +1188,62 @@ function renderCatManager(){
   const cats=tutteLeCategorie();
   const list=document.getElementById("cat-manager-list");
   if(!cats.length){list.innerHTML=`<p style="font-size:.82rem;color:var(--text-muted);padding:4px 0">Nessuna categoria ancora.</p>`;return;}
-  list.innerHTML=cats.map(cat=>`
-    <div class="cat-manager-row">
+  list.innerHTML=cats.map(cat=>{
+    const safe=encodeURIComponent(cat);
+    return`<div class="cat-manager-row" id="catrow-${safe}">
       <span class="cat-manager-emoji">${emojiPerCat(cat)}</span>
       <span class="cat-manager-name">${cat}</span>
-      <button class="cat-manager-del" onclick="rimuoviCategoria('${cat.replace(/'/g,"\\'")}')">✕</button>
-    </div>`).join("");
+      <button class="cat-manager-edit" onclick="avviaRinomina('${safe}')" title="Rinomina">✏️</button>
+      <button class="cat-manager-del" onclick="rimuoviCategoria('${cat.replace(/'/g,"\'")}')">✕</button>
+    </div>`;
+  }).join("");
 }
-function aggiungiCategoria(){
+function avviaRinomina(safeKey){
+  const cat=decodeURIComponent(safeKey);
+  const row=document.getElementById("catrow-"+safeKey);
+  if(!row)return;
+  row.innerHTML=`
+    <span class="cat-manager-emoji">${emojiPerCat(cat)}</span>
+    <input class="cat-rename-input" value="${cat}" id="rename-input-${safeKey}">
+    <button class="cat-manager-edit" onclick="confermaRinomina('${safeKey}','${cat.replace(/'/g,"\'")}')">✓</button>
+    <button class="cat-manager-del" onclick="renderCatManager()">✕</button>`;
+  const inp=document.getElementById("rename-input-"+safeKey);
+  inp.focus(); inp.select();
+  inp.addEventListener("keydown",e=>{
+    if(e.key==="Enter") confermaRinomina(safeKey,cat);
+    if(e.key==="Escape") renderCatManager();
+  });
+}
+function confermaRinomina(safeKey,vecchio){
+  const inp=document.getElementById("rename-input-"+safeKey);
+  if(inp) rinominaCategoria(vecchio,inp.value);
+}
+
+async function aggiungiCategoria(){
   const val=document.getElementById("new-cat-input").value.trim();
   if(!val)return;
-  if(!categoriePersonalizzate.includes(val)) categoriePersonalizzate.push(val);
-  localStorage.setItem("scorte-categorie",JSON.stringify(categoriePersonalizzate));
+  if(categoriePersonalizzate.includes(val)){alert("Categoria già esistente.");return;}
+  const{error}=await client.from("categorie").insert([{nome:val}]);
+  if(error){alert("Errore: "+error.message);return;}
   document.getElementById("new-cat-input").value="";
-  renderCatManager();
-  aggiornaCatGrid();
+  await carica();
+  aggiornaInfoApp();
 }
-function rimuoviCategoria(cat){
-  categoriePersonalizzate=categoriePersonalizzate.filter(c=>c!==cat);
-  localStorage.setItem("scorte-categorie",JSON.stringify(categoriePersonalizzate));
-  renderCatManager();
-  aggiornaCatGrid();
+async function rimuoviCategoria(cat){
+  const{error}=await client.from("categorie").delete().eq("nome",cat);
+  if(error){alert("Errore: "+error.message);return;}
+  await carica();
+  aggiornaInfoApp();
+}
+async function rinominaCategoria(vecchio,nuovo){
+  nuovo=nuovo.trim();
+  if(!nuovo||nuovo===vecchio)return;
+  // aggiorna la tabella categorie
+  await client.from("categorie").update({nome:nuovo}).eq("nome",vecchio);
+  // aggiorna tutte le scorte con quella categoria
+  await client.from("scorte").update({categoria:nuovo}).eq("categoria",vecchio);
+  await carica();
+  aggiornaInfoApp();
 }
 
 /* ═══════════ INFO APP ═══════════ */
@@ -1140,11 +1267,14 @@ function esportaCSV(){
 }
 
 /* ═══════════ PROGRESS BAR ═══════════ */
-function progressColor(pct){ return pct<=0.25?"#B03A2E":pct<=0.6?"#C17B2A":"#2D5A3D"; }
+// Mostriamo la barra SOLO quando sotto soglia: indica quanto manca al minimo
 function progressInfo(item){
-  const max=Math.max(item.minimo*3,item.quantita+1,10);
-  const pct=Math.min(item.quantita/max,1);
-  return{fill:pct*100,color:progressColor(item.quantita<=item.minimo?0:pct)};
+  if(item.quantita>item.minimo) return null; // sopra soglia: niente barra
+  if(item.minimo===0) return{fill:0,deficit:0};
+  const pct=Math.min(item.quantita/item.minimo,1); // 0=vuoto, 1=esattamente al minimo
+  const deficit=item.minimo-item.quantita;
+  const color=item.quantita===0?"#B03A2E":"#C17B2A";
+  return{fill:pct*100,deficit,color};
 }
 
 /* ═══════════ MOSTRA LISTA ═══════════ */
@@ -1163,11 +1293,14 @@ function mostra(){
   lista.forEach(item=>{
     const low=item.quantita<=item.minimo;
     const safeName=item.nome.replace(/'/g,"\\'");
-    const{fill,color}=progressInfo(item);
-    const progressHTML=impostazioni.progressOn?`
+    const pInfo=progressInfo(item);
+    const progressHTML=(impostazioni.progressOn&&pInfo)?`
       <div class="progress-wrap">
-        <div class="progress-track"><div class="progress-fill" style="width:${fill}%;background:${color}"></div></div>
-        <div class="progress-label"><span>${item.quantita} in stock</span><span>min. ${item.minimo}</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:${pInfo.fill}%;background:${pInfo.color}"></div></div>
+        <div class="progress-label">
+          <span style="color:${pInfo.color};font-weight:600">Mancano ${pInfo.deficit} al minimo</span>
+          <span>${item.quantita} / ${item.minimo}</span>
+        </div>
       </div>`:"";
     const wrap=document.createElement("div");
     wrap.className="swipe-wrap";
