@@ -286,12 +286,13 @@ header h1 em{font-style:italic;font-weight:300}
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .modal-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px}
 .modal h3{font-family:'Fraunces',serif;font-size:1.2rem;font-weight:600;margin-bottom:14px}
-.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.modal-grid input{padding:11px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
+.modal-stack{display:flex;flex-direction:column;gap:8px}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.modal-stack input,.modal-row input{
+  width:100%;padding:11px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
   font-family:'DM Sans',sans-serif;font-size:.9rem;background:var(--bg);color:var(--text);
   outline:none;-webkit-appearance:none;transition:border-color .2s}
-.modal-grid input:focus{border-color:var(--accent);background:var(--surface)}
-.modal-grid input.full{grid-column:1/-1}
+.modal-stack input:focus,.modal-row input:focus{border-color:var(--accent);background:var(--surface)}
 .modal-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
 .btn-cancel{padding:12px;background:var(--bg2);color:var(--text-muted);border:1.5px solid var(--border);
   border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;cursor:pointer}
@@ -503,11 +504,13 @@ header h1 em{font-style:italic;font-weight:300}
   <div class="modal">
     <div class="modal-handle"></div>
     <h3>Modifica scorta</h3>
-    <div class="modal-grid">
-      <input id="edit-nome" class="full" placeholder="Nome" autocomplete="off">
+    <div class="modal-stack">
+      <input id="edit-nome" placeholder="Nome" autocomplete="off">
       <input id="edit-categoria" placeholder="Categoria" autocomplete="off">
-      <input id="edit-quantita" type="number" placeholder="Quantità" min="0" inputmode="numeric">
-      <input id="edit-minimo" type="number" placeholder="Minimo" min="0" inputmode="numeric">
+      <div class="modal-row">
+        <input id="edit-quantita" type="number" placeholder="Quantità" min="0" inputmode="numeric">
+        <input id="edit-minimo" type="number" placeholder="Minimo" min="0" inputmode="numeric">
+      </div>
     </div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="chiudiModal()">Annulla</button>
@@ -867,16 +870,22 @@ function esportaPromemoria(){
     "END:VCALENDAR"
   ].join("\r\n");
 
-  // Scarica il file .ics — su iPhone Safari apre automaticamente in Promemoria
-  const blob=new Blob([ics],{type:"text/calendar;charset=utf-8"});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement("a");
-  a.href=url;
-  a.download="lista-spesa.ics";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Su Safari iOS i download blob sono bloccati — usiamo data URI che Safari
+  // riconosce come .ics e offre di aprire direttamente nei Promemoria
+  const encoded = encodeURIComponent(ics);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (isIOS) {
+    // Naviga al data URI: Safari mostra "Apri in Promemoria"
+    window.location.href = "data:text/calendar;charset=utf-8," + encoded;
+  } else {
+    // Su desktop/Android usa il download normale
+    const blob = new Blob([ics], {type:"text/calendar;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "lista-spesa.ics";
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
 }
 
 /* ═══════════ CATEGORIE MANAGER (Impostazioni) ═══════════ */
