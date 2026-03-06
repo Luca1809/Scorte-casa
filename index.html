@@ -4,9 +4,7 @@
 <meta charset="UTF-8">
 <title>Scorte Casa</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 body { font-family: Arial; padding:20px; background:#f4f4f4;}
 input, button { padding:8px; margin:5px 0;}
@@ -15,66 +13,76 @@ input, button { padding:8px; margin:5px 0;}
 </style>
 </head>
 <body>
-
 <h2>Scorte Casa</h2>
-
 <input id="nome" placeholder="Nome">
 <input id="categoria" placeholder="Categoria">
 <input id="quantita" type="number" placeholder="Quantità">
 <input id="minimo" type="number" placeholder="Minimo">
 <button onclick="aggiungi()">Aggiungi</button>
-
 <div id="lista"></div>
-
 <script>
-
-const supabaseUrl = "https://igachimyxuixxltcjsnw.supabase.co/";
+const supabaseUrl = "https://igachimyxuixxltcjsnw.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlnYWNoaW15eHVpeHhsdGNqc253Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNDc2MzgsImV4cCI6MjA4NzYyMzYzOH0.ZCxBWrLZNISSnOu-oxFv3zrW2aZsiNljUfQR831arko";
-
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+const client = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 async function carica() {
-  const { data } = await supabase.from("scorte").select("*");
+  const { data, error } = await client.from("scorte").select("*");
+  if (error) { console.error("Errore carica:", error); return; }
   mostra(data || []);
 }
 
 async function aggiungi() {
-  const nome = document.getElementById("nome").value;
-  const categoria = document.getElementById("categoria").value;
+  const nome = document.getElementById("nome").value.trim();
+  const categoria = document.getElementById("categoria").value.trim();
   const quantita = parseInt(document.getElementById("quantita").value);
   const minimo = parseInt(document.getElementById("minimo").value);
 
-  await supabase.from("scorte").insert([{ nome, categoria, quantita, minimo }]);
+  if (!nome || isNaN(quantita) || isNaN(minimo)) {
+    alert("Compila tutti i campi correttamente.");
+    return;
+  }
+
+  const { error } = await client.from("scorte").insert([{ nome, categoria, quantita, minimo }]);
+  if (error) { console.error("Errore inserimento:", error); alert("Errore: " + error.message); return; }
+
+  document.getElementById("nome").value = "";
+  document.getElementById("categoria").value = "";
+  document.getElementById("quantita").value = "";
+  document.getElementById("minimo").value = "";
+
   carica();
 }
 
 async function aggiorna(id, nuovaQ) {
   if (nuovaQ < 0) nuovaQ = 0;
-  await supabase.from("scorte").update({ quantita: nuovaQ }).eq("id", id);
+  const { error } = await client.from("scorte").update({ quantita: nuovaQ }).eq("id", id);
+  if (error) { console.error("Errore aggiornamento:", error); return; }
   carica();
 }
 
 function mostra(lista) {
   const div = document.getElementById("lista");
-  div.innerHTML="";
-
-  lista.forEach(item=>{
+  div.innerHTML = "";
+  if (lista.length === 0) {
+    div.innerHTML = "<p>Nessuna scorta presente.</p>";
+    return;
+  }
+  lista.forEach(item => {
     const low = item.quantita <= item.minimo ? "low" : "";
-
     div.innerHTML += `
       <div class="item ${low}">
         <strong>${item.nome}</strong> (${item.categoria})<br>
         Quantità: ${item.quantita} | Min: ${item.minimo}<br>
-        <button onclick="aggiorna(${item.id}, ${item.quantita-1})">-</button>
-        <button onclick="aggiorna(${item.id}, ${item.quantita+1})">+</button>
+        <button onclick="aggiorna(${item.id}, ${item.quantita - 1})">-</button>
+        <button onclick="aggiorna(${item.id}, ${item.quantita + 1})">+</button>
       </div>
     `;
   });
 }
 
 carica();
-
 </script>
-
+</body>
+</html>
 </body>
 </html>
