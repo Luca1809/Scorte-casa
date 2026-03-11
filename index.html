@@ -779,6 +779,7 @@ const client = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 /* ═══════════ STATE ═══════════ */
 let tutteLeScorti = [];
 let categoriePersonalizzate = [];
+let categorieEmoji = {};
 let filtroAttivo = "tutti";
 let sortMode = "az";
 let searchQuery = "";
@@ -796,6 +797,7 @@ const catEmoji = {
 };
 function emojiPerCat(cat){
   if(!cat) return "📦";
+  if(categorieEmoji&&categorieEmoji[cat]) return categorieEmoji[cat];
   const k=cat.toLowerCase();
   for(const[key,e] of Object.entries(catEmoji)) if(k.includes(key)) return e;
   return "📦";
@@ -867,8 +869,12 @@ function switchTab(tab){
 async function carica(){
   setLoading(true);
   // Carica categorie dal DB (sincronizzate tra tutti i dispositivi)
-  const{data:catData}=await client.from("categorie").select("nome").order("nome");
-  if(catData) categoriePersonalizzate=catData.map(r=>r.nome);
+  const{data:catData}=await client.from("categorie").select("nome,emoji").order("nome");
+  if(catData){
+    categoriePersonalizzate=catData.map(r=>r.nome);
+    categorieEmoji={};
+    catData.forEach(r=>{ if(r.emoji) categorieEmoji[r.nome]=r.emoji; });
+  }
   const{data,error}=await client.from("scorte").select("*");
   setLoading(false);
   if(error){console.error(error);mostraToast("Errore caricamento dati","warn");return;}
