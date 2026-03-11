@@ -1411,20 +1411,28 @@ async function confermaEmoji(safeKey){
 }
 
 async function salvaEmojiCategoria(cat,emoji){
-  emoji=emoji.trim()||null;
-  const{error}=await client.from("categorie").update({emoji}).eq("nome",cat);
-  if(error){mostraToast("Errore salvataggio emoji","warn");console.error(error);return;}
-  mostraToast("Emoji aggiornata");
+  emoji=(emoji||'').trim()||null;
+  console.log("salvaEmoji:", cat, "->", emoji);
+  const{data,error}=await client.from("categorie").update({emoji}).eq("nome",cat).select();
+  console.log("risultato:", data, error);
+  if(error){mostraToast("Errore: "+error.message,"warn");return;}
+  if(!data||data.length===0){
+    mostraToast("Categoria non trovata nel DB","warn");return;
+  }
+  mostraToast(emoji?"Emoji salvata ✓":"Emoji rimossa");
   await carica();
   aggiornaInfoApp();
 }
 async function aggiungiCategoria(){
   const val=document.getElementById("new-cat-input").value.trim();
+  const emojiVal=document.getElementById("new-cat-emoji").value.trim()||null;
   if(!val)return;
-  if(categoriePersonalizzate.includes(val)){alert("Categoria già esistente.");return;}
-  const{error}=await client.from("categorie").insert([{nome:val}]);
-  if(error){alert("Errore: "+error.message);return;}
+  if(categoriePersonalizzate.includes(val)){mostraToast("Categoria già esistente","warn");return;}
+  const{error}=await client.from("categorie").insert([{nome:val,emoji:emojiVal}]);
+  if(error){mostraToast("Errore: "+error.message,"warn");return;}
   document.getElementById("new-cat-input").value="";
+  document.getElementById("new-cat-emoji").value="";
+  mostraToast("Categoria aggiunta");
   await carica();
   aggiornaInfoApp();
 }
