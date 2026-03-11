@@ -256,12 +256,12 @@ header h1 em{font-style:italic;font-weight:300}
 .cat-manager-del{border:none;background:none;color:var(--text-muted);font-size:1rem;cursor:pointer;
   padding:4px;border-radius:6px;transition:color .15s}
 .cat-manager-del:active{color:var(--danger)}
-.cat-add-row{display:flex;gap:8px;align-items:stretch}
+.cat-add-row{display:flex;gap:6px;align-items:stretch;width:100%;box-sizing:border-box}
 .cat-add-row input{flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);
   font-family:'DM Sans',sans-serif;font-size:16px;background:var(--bg);color:var(--text);outline:none;
   transition:border-color .2s;-webkit-appearance:none}
 .cat-add-row input:focus{border-color:var(--accent);background:var(--surface)}
-.cat-add-row button{padding:10px 14px;background:var(--accent);color:white;border:none;align-self:stretch;
+.cat-add-row button{padding:10px 12px;background:var(--accent);color:white;border:none;align-self:stretch;flex-shrink:0;white-space:nowrap;
   border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer}
 
 /* info row */
@@ -634,7 +634,7 @@ header h1 em{font-style:italic;font-weight:300}
         <div class="cat-manager">
           <div class="cat-manager-list" id="cat-manager-list"></div>
           <div class="cat-add-row">
-            <input id="new-cat-emoji" type="text" placeholder="🏷" style="width:52px;text-align:center;font-size:18px;padding:10px 4px;flex-shrink:0;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);box-sizing:border-box">
+            <input id="new-cat-emoji" type="text" placeholder="🏷" style="width:44px;min-width:0;text-align:center;font-size:18px;padding:10px 2px;flex-shrink:0;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);box-sizing:border-box">
             <input id="new-cat-input" type="text" placeholder="Nuova categoria…" style="flex:1"
             onkeydown="if(event.key==='Enter')aggiungiCategoria()">
             <button onclick="aggiungiCategoria()">+ Aggiungi</button>
