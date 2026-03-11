@@ -1372,43 +1372,142 @@ function copiaIcs(){
 function renderCatManager(){
   const cats=tutteLeCategorie();
   const list=document.getElementById("cat-manager-list");
-  if(!cats.length){list.innerHTML='<p style="font-size:.82rem;color:var(--text-muted);padding:4px 0">Nessuna categoria ancora.</p>';return;}
-  list.innerHTML=cats.map(cat=>{
+  if(!cats.length){
+    list.innerHTML='<p style="font-size:.82rem;color:var(--text-muted);padding:4px 0">Nessuna categoria ancora.</p>';
+    return;
+  }
+
+  list.innerHTML="";
+  cats.forEach(cat=>{
     const safe=encodeURIComponent(cat);
     const emoji=emojiPerCat(cat);
-    return'<div class="cat-manager-row" id="catrow-'+safe+'">'
-      +'<button class="cat-manager-emoji-btn" onclick="apriEmojiInput(\''+safe+'\')" title="Cambia emoji">'+emoji+'</button>'
-      +'<span class="cat-manager-name">'+cat+'</span>'
-      +'<button class="cat-manager-edit" onclick="avviaRinomina(\''+safe+'\')">✏️</button>'
-      +'<button class="cat-manager-del" onclick="rimuoviCategoria(\''+cat.replace(/'/g,"\'")+'\')" >✕</button>'
-      +'</div>'
-      +'<div class="emoji-input-row" id="erow-'+safe+'" style="display:none">'
-      +'<input class="emoji-text-input" id="einput-'+safe+'" placeholder="Digita o incolla emoji…" maxlength="4">'
-      +'<button class="cat-manager-edit" onclick="confermaEmoji(\''+safe+'\')">✓</button>'
-      +'<button class="cat-manager-del" onclick="document.getElementById(\'erow-'+safe+'\').style.display=\'none\'">✕</button>'
-      +'</div>';
-  }).join("");
-}
-function apriEmojiInput(safeKey){
-  document.querySelectorAll('.emoji-input-row').forEach(r=>{
-    if(r.id!=='erow-'+safeKey) r.style.display='none';
+
+    // Riga principale
+    const row=document.createElement("div");
+    row.className="cat-manager-row";
+    row.id="catrow-"+safe;
+
+    const emojiBtn=document.createElement("button");
+    emojiBtn.className="cat-manager-emoji-btn";
+    emojiBtn.title="Cambia emoji";
+    emojiBtn.textContent=emoji;
+    emojiBtn.addEventListener("click",()=>apriEmojiInput(safe));
+
+    const nameSpan=document.createElement("span");
+    nameSpan.className="cat-manager-name";
+    nameSpan.textContent=cat;
+
+    const editBtn=document.createElement("button");
+    editBtn.className="cat-manager-edit";
+    editBtn.textContent="✏️";
+    editBtn.addEventListener("click",()=>avviaRinomina(safe));
+
+    const delBtn=document.createElement("button");
+    delBtn.className="cat-manager-del";
+    delBtn.textContent="✕";
+    delBtn.addEventListener("click",()=>rimuoviCategoria(cat));
+
+    row.appendChild(emojiBtn);
+    row.appendChild(nameSpan);
+    row.appendChild(editBtn);
+    row.appendChild(delBtn);
+    list.appendChild(row);
+
+    // Riga input emoji
+    const erow=document.createElement("div");
+    erow.className="emoji-input-row";
+    erow.id="erow-"+safe;
+    erow.style.display="none";
+
+    const einput=document.createElement("input");
+    einput.className="emoji-text-input";
+    einput.id="einput-"+safe;
+    einput.placeholder="Digita o incolla emoji…";
+    einput.maxLength=4;
+    einput.addEventListener("keydown",e=>{
+      if(e.key==="Enter") confermaEmoji(safe);
+      if(e.key==="Escape") erow.style.display="none";
+    });
+
+    const okBtn=document.createElement("button");
+    okBtn.className="cat-manager-edit";
+    okBtn.textContent="✓";
+    okBtn.addEventListener("click",()=>confermaEmoji(safe));
+
+    const cancelBtn=document.createElement("button");
+    cancelBtn.className="cat-manager-del";
+    cancelBtn.textContent="✕";
+    cancelBtn.addEventListener("click",()=>{erow.style.display="none";});
+
+    erow.appendChild(einput);
+    erow.appendChild(okBtn);
+    erow.appendChild(cancelBtn);
+    list.appendChild(erow);
   });
-  const row=document.getElementById('erow-'+safeKey);
+}
+
+function apriEmojiInput(safeKey){
+  document.querySelectorAll(".emoji-input-row").forEach(r=>{
+    if(r.id!=="erow-"+safeKey) r.style.display="none";
+  });
+  const row=document.getElementById("erow-"+safeKey);
   if(!row) return;
-  const show=row.style.display==='none';
-  row.style.display=show?'flex':'none';
+  const show=row.style.display==="none";
+  row.style.display=show?"flex":"none";
   if(show){
-    const inp=document.getElementById('einput-'+safeKey);
-    if(inp){ inp.focus(); inp.select(); }
+    const inp=document.getElementById("einput-"+safeKey);
+    if(inp){ inp.value=""; inp.focus(); }
   }
 }
+
 async function confermaEmoji(safeKey){
   const cat=decodeURIComponent(safeKey);
-  const inp=document.getElementById('einput-'+safeKey);
-  const emoji=(inp?.value||'').trim();
-  document.getElementById('erow-'+safeKey).style.display='none';
+  const inp=document.getElementById("einput-"+safeKey);
+  const emoji=(inp?.value||"").trim();
+  const erow=document.getElementById("erow-"+safeKey);
+  if(erow) erow.style.display="none";
   await salvaEmojiCategoria(cat,emoji);
 }
+
+function avviaRinomina(safeKey){
+  const cat=decodeURIComponent(safeKey);
+  const row=document.getElementById("catrow-"+safeKey);
+  if(!row) return;
+  // Svuota la riga e sostituisci con input rinomina
+  row.innerHTML="";
+  const emojiSpan=document.createElement("span");
+  emojiSpan.style.cssText="font-size:1.25rem;flex-shrink:0";
+  emojiSpan.textContent=emojiPerCat(cat);
+
+  const inp=document.createElement("input");
+  inp.className="cat-rename-input";
+  inp.value=cat;
+  inp.addEventListener("keydown",e=>{
+    if(e.key==="Enter") confermaRinomina(safeKey,cat,inp.value);
+    if(e.key==="Escape") renderCatManager();
+  });
+
+  const okBtn=document.createElement("button");
+  okBtn.className="cat-manager-edit";
+  okBtn.textContent="✓";
+  okBtn.addEventListener("click",()=>confermaRinomina(safeKey,cat,inp.value));
+
+  const cancelBtn=document.createElement("button");
+  cancelBtn.className="cat-manager-del";
+  cancelBtn.textContent="✕";
+  cancelBtn.addEventListener("click",()=>renderCatManager());
+
+  row.appendChild(emojiSpan);
+  row.appendChild(inp);
+  row.appendChild(okBtn);
+  row.appendChild(cancelBtn);
+  setTimeout(()=>{inp.focus();inp.select();},50);
+}
+
+function confermaRinomina(safeKey,vecchio,nuovo){
+  rinominaCategoria(vecchio,nuovo.trim());
+}
+
 
 async function salvaEmojiCategoria(cat,emoji){
   emoji=(emoji||'').trim()||null;
