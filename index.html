@@ -1410,6 +1410,14 @@ async function confermaEmoji(safeKey){
   await salvaEmojiCategoria(cat,emoji);
 }
 
+async function salvaEmojiCategoria(cat,emoji){
+  emoji=emoji.trim()||null;
+  const{error}=await client.from("categorie").update({emoji}).eq("nome",cat);
+  if(error){mostraToast("Errore salvataggio emoji","warn");console.error(error);return;}
+  mostraToast("Emoji aggiornata");
+  await carica();
+  aggiornaInfoApp();
+}
 async function aggiungiCategoria(){
   const val=document.getElementById("new-cat-input").value.trim();
   if(!val)return;
