@@ -357,6 +357,16 @@ header h1 em{font-style:italic;font-weight:300}
 .cat-manager-edit:active{color:var(--accent)}
 .cat-rename-input{flex:1;padding:6px 10px;border:1.5px solid var(--accent);border-radius:var(--radius-sm);
   font-family:'DM Sans',sans-serif;font-size:.88rem;background:var(--surface);color:var(--text);outline:none}
+.cat-manager-emoji-btn{border:none;background:none;font-size:1.25rem;cursor:pointer;
+  padding:2px 4px;border-radius:6px;transition:background .15s;line-height:1;flex-shrink:0}
+.cat-manager-emoji-btn:active{background:var(--bg2)}
+.emoji-picker{display:none;grid-template-columns:repeat(9,1fr);gap:4px;
+  padding:10px;background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius);margin:0 0 6px;box-shadow:var(--shadow-lg);animation:fadeSlide .15s ease}
+.emoji-opt{font-size:1.3rem;text-align:center;cursor:pointer;padding:4px;border-radius:6px;
+  transition:background .1s;line-height:1.3;user-select:none}
+.emoji-opt:active{background:var(--bg2)}
+.emoji-opt-reset{font-size:.85rem;color:var(--text-muted);display:flex;align-items:center;justify-content:center}
 
 /* ── TOAST ── */
 /* ── LOADING RING ── */
@@ -623,8 +633,9 @@ header h1 em{font-style:italic;font-weight:300}
         <div class="cat-manager">
           <div class="cat-manager-list" id="cat-manager-list"></div>
           <div class="cat-add-row">
-            <input id="new-cat-input" placeholder="Nuova categoria…" autocomplete="off"
-              onkeydown="if(event.key==='Enter')aggiungiCategoria()">
+            <input id="new-cat-emoji" type="text" placeholder="🏷" style="width:52px;text-align:center;font-size:18px;padding:8px 4px;flex-shrink:0;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg)">
+            <input id="new-cat-input" type="text" placeholder="Nuova categoria…" style="flex:1"
+            onkeydown="if(event.key==='Enter')aggiungiCategoria()">
             <button onclick="aggiungiCategoria()">+ Aggiungi</button>
           </div>
         </div>
@@ -1336,26 +1347,45 @@ function copiaIcs(){
 }
 
 /* ═══════════ CATEGORIE MANAGER (Impostazioni) ═══════════ */
+const EMOJI_PICKER_LIST=['🍳', '🛒', '🥫', '❄️', '🛁', '🧹', '🧴', '🧺', '🍷', '🥤', '🍿', '🧊', '💊', '🐾', '🌱', '🏠', '📎', '🧻', '☕', '🫙', '🍞', '🧃', '🧼', '🪥', '🪣', '🫧', '🧽', '🪴', '🎾', '📦', '🗂️', '🛋️', '🔧', '💡', '🪟', '🛏️', '🚿', '🪒', '🌿', '🧈', '🥚', '🍋', '🍅'];
 function renderCatManager(){
   const cats=tutteLeCategorie();
   const list=document.getElementById("cat-manager-list");
-  if(!cats.length){list.innerHTML=`<p style="font-size:.82rem;color:var(--text-muted);padding:4px 0">Nessuna categoria ancora.</p>`;return;}
+  if(!cats.length){list.innerHTML='<p style="font-size:.82rem;color:var(--text-muted);padding:4px 0">Nessuna categoria ancora.</p>';return;}
   list.innerHTML=cats.map(cat=>{
     const safe=encodeURIComponent(cat);
-    return`<div class="cat-manager-row" id="catrow-${safe}">
-      <span class="cat-manager-emoji">${emojiPerCat(cat)}</span>
-      <span class="cat-manager-name">${cat}</span>
-      <button class="cat-manager-edit" onclick="avviaRinomina('${safe}')" title="Rinomina">✏️</button>
-      <button class="cat-manager-del" onclick="rimuoviCategoria('${cat.replace(/'/g,"\'")}')">✕</button>
-    </div>`;
+    const emoji=emojiPerCat(cat);
+    const pickerItems=EMOJI_PICKER_LIST.map(e=>'<span class="emoji-opt" onclick="selectEmojiCat(\''+safe+'\',\''+e+'\')">'+e+'</span>').join('')
+      +'<span class="emoji-opt emoji-opt-reset" onclick="selectEmojiCat(\''+safe+'\',\'\')">↺</span>';
+    return '<div class="cat-manager-row" id="catrow-'+safe+'">'
+      +'<button class="cat-manager-emoji-btn" onclick="toggleEmojiPicker(\''+safe+'\')" title="Cambia emoji">'+emoji+'</button>'
+      +'<span class="cat-manager-name">'+cat+'</span>'
+      +'<button class="cat-manager-edit" onclick="avviaRinomina(\''+safe+'\')">✏️</button>'
+      +'<button class="cat-manager-del" onclick="rimuoviCategoria(\''+cat.replace("'","\'")+'\')" >✕</button>'
+      +'</div>'
+      +'<div class="emoji-picker" id="epicker-'+safe+'" style="display:none">'+pickerItems+'</div>';
   }).join("");
 }
+function toggleEmojiPicker(safeKey){
+  document.querySelectorAll('.emoji-picker').forEach(p=>{
+    if(p.id!=='epicker-'+safeKey) p.style.display='none';
+  });
+  const p=document.getElementById('epicker-'+safeKey);
+  if(p) p.style.display=p.style.display==='none'?'grid':'none';
+}
+async function selectEmojiCat(safeKey,emoji){
+  const cat=decodeURIComponent(safeKey);
+  const p=document.getElementById('epicker-'+safeKey);
+  if(p) p.style.display='none';
+  await salvaEmojiCategoria(cat,emoji);
+}
+
 function avviaRinomina(safeKey){
   const cat=decodeURIComponent(safeKey);
   const row=document.getElementById("catrow-"+safeKey);
   if(!row)return;
   row.innerHTML=`
-    <span class="cat-manager-emoji">${emojiPerCat(cat)}</span>
+    <span style="font-size:1.25rem;flex-shrink:0">${emojiPerCat(cat)}</span>
     <input class="cat-rename-input" value="${cat}" id="rename-input-${safeKey}">
     <button class="cat-manager-edit" onclick="confermaRinomina('${safeKey}','${cat.replace(/'/g,"\'")}')">✓</button>
     <button class="cat-manager-del" onclick="renderCatManager()">✕</button>`;
